@@ -480,9 +480,9 @@ export const ReservationModal: React.FC = () => {
           </div>
 
           {/* Controle de pagamentos */}
-          <div className="space-y-3">
+          <div id="payments-section" className="space-y-3 rounded-2xl border-2 border-emerald-300 bg-emerald-50/40 p-3 sm:p-4 scroll-mt-4">
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-stone-900">Pagamentos recebidos</h3>
+              <h3 className="text-base sm:text-lg font-extrabold text-emerald-950">Pagamentos recebidos</h3>
               <p className="text-xs text-stone-500">Adicione o sinal e quantas parcelas forem necessárias.</p>
             </div>
 

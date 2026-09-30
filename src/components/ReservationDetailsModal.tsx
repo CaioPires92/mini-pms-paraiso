@@ -14,6 +14,7 @@ import {
   Printer,
   MessageCircle,
   Store,
+  PlusCircle,
 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { formatDateBR, calculateDailyCount, formatDateFullBR } from '../lib/dateUtils';
@@ -49,6 +50,14 @@ export const ReservationDetailsModal: React.FC = () => {
   const handleEdit = () => {
     closeReservationDetails();
     openEditReservationModal(res);
+  };
+
+  const handleAddPayment = () => {
+    closeReservationDetails();
+    openEditReservationModal(res);
+    window.setTimeout(() => {
+      document.getElementById('payments-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
   };
 
   const handleCancel = () => {
@@ -207,6 +216,15 @@ export const ReservationDetailsModal: React.FC = () => {
               </div>
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={handleAddPayment}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-4 py-3.5 font-extrabold text-white shadow-sm transition hover:bg-emerald-800 print:hidden"
+          >
+            <PlusCircle className="h-5 w-5" />
+            Adicionar pagamento
+          </button>
 
           {/* Detalhes de Contato do Hóspede */}
           <div className="space-y-3 border-t-2 border-stone-200 pt-4">
