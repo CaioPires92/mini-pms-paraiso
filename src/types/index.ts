@@ -1,5 +1,5 @@
 export type ReservationStatus = 'Reservada' | 'Hospedado' | 'Finalizada' | 'Cancelada';
-export type SalesChannel = 'WhatsApp' | 'Site' | 'Instagram' | 'Telefone' | 'Recepção';
+export type SalesChannel = 'WhatsApp' | 'Site' | 'Booking' | 'Instagram' | 'Telefone' | 'Recepção';
 export type PaymentMethod = 'Pix' | 'Cartão' | 'Dinheiro';
 export type PaymentType = 'Sinal' | 'Parcela' | 'Pagamento final' | 'Outro';
 

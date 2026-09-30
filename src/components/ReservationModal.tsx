@@ -473,7 +473,7 @@ export const ReservationModal: React.FC = () => {
               onChange={(e) => setSalesChannel(e.target.value as SalesChannel)}
               className="w-full px-4 py-3 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-bold"
             >
-              {(['WhatsApp', 'Site', 'Instagram', 'Telefone', 'Recepção'] as SalesChannel[]).map((channel) => (
+              {(['WhatsApp', 'Site', 'Booking', 'Instagram', 'Telefone', 'Recepção'] as SalesChannel[]).map((channel) => (
                 <option key={channel} value={channel}>{channel}</option>
               ))}
             </select>
