@@ -18,3 +18,4 @@ View your app in AI Studio: https://ai.studio/apps/4a9711dd-ce44-4aaf-9705-f32d5
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+# mini-pms-paraiso
