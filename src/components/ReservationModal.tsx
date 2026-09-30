@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, User, DollarSign, Bed, Phone, Mail, Car, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Calendar, User, DollarSign, Bed, Phone, Mail, Car, CheckCircle2, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { calculateDailyCount, formatDateBR, getTodaySaoPaulo, addDays } from '../lib/dateUtils';
 import { formatCurrencyBRL, parseCurrencyInput } from '../lib/currencyUtils';
 import { ConflictAlert } from './ConflictAlert';
-import { ReservationStatus, SalesChannel } from '../types';
+import { PaymentMethod, PaymentType, ReservationPayment, ReservationStatus, SalesChannel } from '../types';
+import { getReservationPayments } from '../lib/paymentUtils';
 
 export const ReservationModal: React.FC = () => {
   const {
@@ -34,8 +35,12 @@ export const ReservationModal: React.FC = () => {
   const [checkOut, setCheckOut] = useState(defaultTomorrow);
   const [totalValueInput, setTotalValueInput] = useState('');
   const [salesChannel, setSalesChannel] = useState<SalesChannel>('WhatsApp');
-  const [depositInput, setDepositInput] = useState('');
-  const [additionalPaymentInput, setAdditionalPaymentInput] = useState('');
+  const [payments, setPayments] = useState<ReservationPayment[]>([]);
+  const [paymentAmountInput, setPaymentAmountInput] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Pix');
+  const [paymentType, setPaymentType] = useState<PaymentType>('Sinal');
+  const [paymentDate, setPaymentDate] = useState(defaultToday);
+  const [paymentNote, setPaymentNote] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<ReservationStatus>('Reservada');
 
@@ -71,8 +76,7 @@ export const ReservationModal: React.FC = () => {
         setAccommodationId(chosenAccId);
         setTotalValueInput(init.total_value ? init.total_value.toString() : '');
         setSalesChannel(init.sales_channel || 'WhatsApp');
-        setDepositInput(init.deposit_amount ? init.deposit_amount.toString() : '');
-        setAdditionalPaymentInput(init.additional_payment_amount ? init.additional_payment_amount.toString() : '');
+        setPayments(getReservationPayments(init));
         setNotes(init.notes || '');
         setStatus(init.status || 'Reservada');
         if (init.document || init.phone || init.email || init.vehicle_plate || init.notes) {
@@ -91,8 +95,12 @@ export const ReservationModal: React.FC = () => {
         setAccommodationId(available[0]?.id || '');
         setTotalValueInput('');
         setSalesChannel('WhatsApp');
-        setDepositInput('');
-        setAdditionalPaymentInput('');
+        setPayments([]);
+        setPaymentAmountInput('');
+        setPaymentMethod('Pix');
+        setPaymentType('Sinal');
+        setPaymentDate(defaultToday);
+        setPaymentNote('');
         setNotes('');
         setStatus('Reservada');
         setShowOptionalFields(false);
@@ -122,12 +130,7 @@ export const ReservationModal: React.FC = () => {
     return parseCurrencyInput(totalValueInput);
   }, [totalValueInput]);
 
-  const depositAmount = useMemo(() => parseCurrencyInput(depositInput), [depositInput]);
-  const additionalPaymentAmount = useMemo(
-    () => parseCurrencyInput(additionalPaymentInput),
-    [additionalPaymentInput]
-  );
-  const paidAmount = depositAmount + additionalPaymentAmount;
+  const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const remainingAmount = Math.max(0, totalValue - paidAmount);
 
   const averageDaily = useMemo(() => {
@@ -136,6 +139,37 @@ export const ReservationModal: React.FC = () => {
     }
     return 0;
   }, [dailyCount, totalValue]);
+
+  const addPayment = () => {
+    const amount = parseCurrencyInput(paymentAmountInput);
+    if (amount <= 0) {
+      setFormError('Informe um valor válido para o pagamento.');
+      return;
+    }
+    if (paidAmount + amount > totalValue) {
+      setFormError('Este pagamento ultrapassa o saldo restante da reserva.');
+      return;
+    }
+    setPayments((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        amount,
+        method: paymentMethod,
+        type: paymentType,
+        paid_at: paymentDate,
+        note: paymentNote.trim() || undefined,
+      },
+    ]);
+    setPaymentAmountInput('');
+    setPaymentType('Parcela');
+    setPaymentNote('');
+    setFormError(null);
+  };
+
+  const removePayment = (id: string) => {
+    setPayments((current) => current.filter((payment) => payment.id !== id));
+  };
 
   // Conflict Checking
   const conflictResult = useMemo(() => {
@@ -179,7 +213,7 @@ export const ReservationModal: React.FC = () => {
       return;
     }
 
-    if (depositAmount < 0 || additionalPaymentAmount < 0 || paidAmount > totalValue) {
+    if (paidAmount > totalValue) {
       setFormError('Os pagamentos não podem ser negativos nem ultrapassar o valor total.');
       return;
     }
@@ -201,8 +235,9 @@ export const ReservationModal: React.FC = () => {
         check_out: checkOut,
         total_value: totalValue,
         sales_channel: salesChannel,
-        deposit_amount: depositAmount,
-        additional_payment_amount: additionalPaymentAmount,
+        payments,
+        deposit_amount: undefined,
+        additional_payment_amount: undefined,
         notes: notes.trim() || undefined,
         status,
       });
@@ -223,8 +258,9 @@ export const ReservationModal: React.FC = () => {
         check_out: checkOut,
         total_value: totalValue,
         sales_channel: salesChannel,
-        deposit_amount: depositAmount,
-        additional_payment_amount: additionalPaymentAmount,
+        payments,
+        deposit_amount: undefined,
+        additional_payment_amount: undefined,
         notes: notes.trim() || undefined,
         status,
       });
@@ -445,28 +481,51 @@ export const ReservationModal: React.FC = () => {
 
           {/* Controle de pagamentos */}
           <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-bold text-stone-900 mb-1.5">Sinal recebido (R$)</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={depositInput}
-                  onChange={(e) => setDepositInput(e.target.value)}
-                  placeholder="Ex: 300,00"
-                  className="w-full px-4 py-3 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 font-bold"
-                />
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-stone-900">Pagamentos recebidos</h3>
+              <p className="text-xs text-stone-500">Adicione o sinal e quantas parcelas forem necessárias.</p>
+            </div>
+
+            {payments.length > 0 && (
+              <div className="space-y-2">
+                {payments.map((payment) => (
+                  <div key={payment.id} className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 p-3">
+                    <div className="min-w-0">
+                      <div className="font-bold text-stone-900">{payment.type} · {payment.method}</div>
+                      <div className="text-xs text-stone-500">{formatDateBR(payment.paid_at)}{payment.note ? ` · ${payment.note}` : ''}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <strong className="text-emerald-800 tabular-nums">{formatCurrencyBRL(payment.amount)}</strong>
+                      <button type="button" onClick={() => removePayment(payment.id)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50" aria-label="Excluir pagamento" title="Excluir pagamento">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <label className="block text-sm font-bold text-stone-900 mb-1.5">Restante já pago (R$)</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={additionalPaymentInput}
-                  onChange={(e) => setAdditionalPaymentInput(e.target.value)}
-                  placeholder="Ex: 700,00"
-                  className="w-full px-4 py-3 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 font-bold"
-                />
+            )}
+
+            <div className="rounded-2xl border-2 border-stone-200 p-3 space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <select value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)} className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-semibold">
+                  <option value="Sinal">Sinal</option>
+                  <option value="Parcela">Parcela</option>
+                  <option value="Pagamento final">Pagamento final</option>
+                  <option value="Outro">Outro</option>
+                </select>
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-semibold">
+                  <option value="Pix">Pix</option>
+                  <option value="Cartão">Cartão</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                </select>
+                <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-semibold" />
+                <input type="text" inputMode="decimal" value={paymentAmountInput} onChange={(e) => setPaymentAmountInput(e.target.value)} placeholder="Valor (R$)" className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-bold" />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input type="text" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} placeholder="Observação, ex: parcela 1/3" className="flex-1 rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5" />
+                <button type="button" onClick={addPayment} className="flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 font-bold text-white hover:bg-stone-800">
+                  <Plus className="h-4 w-4" /> Adicionar pagamento
+                </button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-stone-200 bg-stone-50 p-3">

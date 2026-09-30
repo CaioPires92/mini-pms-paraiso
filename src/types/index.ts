@@ -1,5 +1,16 @@
 export type ReservationStatus = 'Reservada' | 'Hospedado' | 'Finalizada' | 'Cancelada';
 export type SalesChannel = 'WhatsApp' | 'Site' | 'Instagram' | 'Telefone' | 'Recepção';
+export type PaymentMethod = 'Pix' | 'Cartão' | 'Dinheiro';
+export type PaymentType = 'Sinal' | 'Parcela' | 'Pagamento final' | 'Outro';
+
+export interface ReservationPayment {
+  id: string;
+  amount: number;
+  method: PaymentMethod;
+  type: PaymentType;
+  paid_at: string; // YYYY-MM-DD
+  note?: string;
+}
 
 export interface Accommodation {
   id: string;
@@ -23,6 +34,7 @@ export interface Reservation {
   sales_channel?: SalesChannel;
   deposit_amount?: number; // Sinal recebido
   additional_payment_amount?: number; // Demais pagamentos recebidos
+  payments?: ReservationPayment[];
   notes?: string; // Opcional
   status: ReservationStatus;
   created_at: string; // ISO

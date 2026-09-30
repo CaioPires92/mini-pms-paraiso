@@ -14,6 +14,7 @@ import {
 import { usePms } from '../context/PmsContext';
 import { getTodaySaoPaulo, formatDateFullBR, formatDateBR, formatDateShortBR, calculateDailyCount, addDays } from '../lib/dateUtils';
 import { formatCurrencyBRL } from '../lib/currencyUtils';
+import { getPaidAmount } from '../lib/paymentUtils';
 
 export const DashboardView: React.FC = () => {
   const {
@@ -59,7 +60,7 @@ export const DashboardView: React.FC = () => {
 
   const totalBooked = activeReservations.reduce((sum, reservation) => sum + reservation.total_value, 0);
   const totalPaid = activeReservations.reduce(
-    (sum, reservation) => sum + (reservation.deposit_amount || 0) + (reservation.additional_payment_amount || 0),
+    (sum, reservation) => sum + getPaidAmount(reservation),
     0
   );
   const totalOutstanding = Math.max(0, totalBooked - totalPaid);

@@ -19,6 +19,7 @@ import { usePms } from '../context/PmsContext';
 import { formatDateBR, calculateDailyCount, formatDateFullBR } from '../lib/dateUtils';
 import { formatCurrencyBRL } from '../lib/currencyUtils';
 import { ReservationStatus } from '../types';
+import { getOutstandingAmount, getPaidAmount, getReservationPayments } from '../lib/paymentUtils';
 
 export const ReservationDetailsModal: React.FC = () => {
   const {
@@ -40,10 +41,10 @@ export const ReservationDetailsModal: React.FC = () => {
   const acc = accommodations.find((a) => a.id === res.accommodation_id);
   const dailyCount = calculateDailyCount(res.check_in, res.check_out);
   const averageDaily = dailyCount > 0 ? res.total_value / dailyCount : 0;
-  const depositAmount = res.deposit_amount || 0;
-  const additionalPaymentAmount = res.additional_payment_amount || 0;
-  const paidAmount = depositAmount + additionalPaymentAmount;
-  const remainingAmount = Math.max(0, res.total_value - paidAmount);
+  const paymentRecords = getReservationPayments(res);
+  const depositAmount = paymentRecords.filter((payment) => payment.type === 'Sinal').reduce((sum, payment) => sum + payment.amount, 0);
+  const paidAmount = getPaidAmount(res);
+  const remainingAmount = getOutstandingAmount(res);
 
   const handleEdit = () => {
     closeReservationDetails();
@@ -189,6 +190,23 @@ export const ReservationDetailsModal: React.FC = () => {
               <strong className={`tabular-nums ${remainingAmount > 0 ? 'text-amber-900' : 'text-emerald-900'}`}>{formatCurrencyBRL(remainingAmount)}</strong>
             </div>
           </div>
+
+          {paymentRecords.length > 0 && (
+            <div className="rounded-2xl border-2 border-stone-200 overflow-hidden">
+              <div className="bg-stone-100 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-stone-600">Histórico de pagamentos</div>
+              <div className="divide-y divide-stone-200">
+                {paymentRecords.map((payment) => (
+                  <div key={payment.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div>
+                      <div className="font-bold text-stone-900">{payment.type} · {payment.method}</div>
+                      <div className="text-xs text-stone-500">{formatDateBR(payment.paid_at)}{payment.note ? ` · ${payment.note}` : ''}</div>
+                    </div>
+                    <strong className="text-emerald-800 tabular-nums">{formatCurrencyBRL(payment.amount)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Detalhes de Contato do Hóspede */}
           <div className="space-y-3 border-t-2 border-stone-200 pt-4">

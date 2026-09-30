@@ -11,6 +11,7 @@ import { usePms } from '../context/PmsContext';
 import { formatDateBR, calculateDailyCount, getTodaySaoPaulo, addDays } from '../lib/dateUtils';
 import { formatCurrencyBRL } from '../lib/currencyUtils';
 import { ReservationStatus } from '../types';
+import { getOutstandingAmount } from '../lib/paymentUtils';
 
 export const ReservationsListView: React.FC = () => {
   const {
@@ -343,7 +344,7 @@ export const ReservationsListView: React.FC = () => {
                         {res.sales_channel || '—'}
                       </td>
                       <td className="py-4 px-4 text-right font-bold text-amber-800 tabular-nums">
-                        {formatCurrencyBRL(Math.max(0, res.total_value - (res.deposit_amount || 0) - (res.additional_payment_amount || 0)))}
+                        {formatCurrencyBRL(getOutstandingAmount(res))}
                       </td>
                       <td className="py-4 px-4 text-center">
                         <span
@@ -419,7 +420,7 @@ export const ReservationsListView: React.FC = () => {
                 <div className="mt-2 flex items-center justify-between text-xs font-bold">
                   <span className="text-stone-600">Canal: {res.sales_channel || 'Não informado'}</span>
                   <span className="text-amber-800">
-                    Saldo: {formatCurrencyBRL(Math.max(0, res.total_value - (res.deposit_amount || 0) - (res.additional_payment_amount || 0)))}
+                    Saldo: {formatCurrencyBRL(getOutstandingAmount(res))}
                   </span>
                 </div>
 
