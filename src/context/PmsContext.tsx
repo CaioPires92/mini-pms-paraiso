@@ -8,8 +8,10 @@ import {
   getStoredSettings,
   saveSettings,
   resetAllDataToDefault,
+  DEFAULT_SETTINGS,
 } from '../lib/storage';
 import { isDateRangeOverlapping, getTodaySaoPaulo, calculateDailyCount, isReservationPast } from '../lib/dateUtils';
+import { supabase } from '../lib/supabase';
 
 interface ConflictCheckResult {
   hasConflict: boolean;
@@ -86,6 +88,7 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [accommodations, setAccommodations] = useState<Accommodation[]>(() => getStoredAccommodations());
   const [reservations, setReservations] = useState<Reservation[]>(() => getStoredReservations());
   const [settings, setSettings] = useState<InnSettings>(() => getStoredSettings());
+  const [databaseReady, setDatabaseReady] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'mapa' | 'reservas' | 'acomodacoes' | 'configuracoes'>('mapa');
 
   const [modalReservation, setModalReservation] = useState<ModalReservationState>({
@@ -104,7 +107,46 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 4000);
   }, []);
 
-  // Save to persistent storage whenever state changes
+  // Load the authenticated user's shared state. Existing local data is used to
+  // seed the database only when this user has no remote state yet.
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !active) return;
+      const { data, error } = await supabase
+        .from('pms_state')
+        .select('accommodations,reservations,settings')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!active) return;
+      if (error) {
+        showToast(`Erro ao carregar o banco: ${error.message}`, 'error');
+        return;
+      }
+      if (data) {
+        setAccommodations(data.accommodations as Accommodation[]);
+        setReservations(data.reservations as Reservation[]);
+        setSettings({ ...DEFAULT_SETTINGS, ...(data.settings as InnSettings) });
+      } else {
+        const { error: seedError } = await supabase.from('pms_state').insert({
+          user_id: user.id,
+          accommodations,
+          reservations,
+          settings,
+        });
+        if (seedError) {
+          showToast(`Erro ao iniciar o banco: ${seedError.message}`, 'error');
+          return;
+        }
+      }
+      setDatabaseReady(true);
+    };
+    load();
+    return () => { active = false; };
+  }, []);
+
+  // Keep a local backup and synchronize the complete state after each change.
   useEffect(() => {
     saveAccommodations(accommodations);
   }, [accommodations]);
@@ -116,6 +158,23 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    if (!databaseReady) return;
+    const timer = window.setTimeout(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { error } = await supabase.from('pms_state').upsert({
+        user_id: user.id,
+        accommodations,
+        reservations,
+        settings,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) showToast(`Erro ao salvar no banco: ${error.message}`, 'error');
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [accommodations, reservations, settings, databaseReady, showToast]);
 
   // Keep selectedReservationDetails fresh if updated
   useEffect(() => {

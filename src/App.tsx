@@ -9,6 +9,7 @@ import { SettingsView } from './components/SettingsView';
 import { ReservationModal } from './components/ReservationModal';
 import { ReservationDetailsModal } from './components/ReservationDetailsModal';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { AuthGate } from './components/AuthGate';
 
 const MainContent: React.FC = () => {
   const { activeTab, toast } = usePms();
@@ -59,8 +60,10 @@ const MainContent: React.FC = () => {
 
 export default function App() {
   return (
-    <PmsProvider>
-      <MainContent />
-    </PmsProvider>
+    <AuthGate>
+      <PmsProvider>
+        <MainContent />
+      </PmsProvider>
+    </AuthGate>
   );
 }
