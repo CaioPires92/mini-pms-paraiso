@@ -505,28 +505,41 @@ export const ReservationModal: React.FC = () => {
               </div>
             )}
 
-            <div className="rounded-2xl border-2 border-stone-200 p-3 space-y-3">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <select value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)} className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-semibold">
-                  <option value="Sinal">Sinal</option>
-                  <option value="Parcela">Parcela</option>
-                  <option value="Pagamento final">Pagamento final</option>
-                  <option value="Outro">Outro</option>
-                </select>
-                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-semibold">
-                  <option value="Pix">Pix</option>
-                  <option value="Cartão">Cartão</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                </select>
-                <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-semibold" />
-                <input type="text" inputMode="decimal" value={paymentAmountInput} onChange={(e) => setPaymentAmountInput(e.target.value)} placeholder="Valor (R$)" className="rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5 font-bold" />
+            <div className="rounded-2xl border border-emerald-200 bg-white p-4 space-y-4 shadow-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="min-w-0 text-xs font-bold text-stone-700">
+                  Tipo do pagamento
+                  <select value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900">
+                    <option value="Sinal">Sinal</option>
+                    <option value="Parcela">Parcela</option>
+                    <option value="Pagamento final">Pagamento final</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </label>
+                <label className="min-w-0 text-xs font-bold text-stone-700">
+                  Forma de pagamento
+                  <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900">
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão">Cartão</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                  </select>
+                </label>
+                <label className="min-w-0 text-xs font-bold text-stone-700">
+                  Data do pagamento
+                  <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900" />
+                </label>
+                <label className="min-w-0 text-xs font-bold text-stone-700">
+                  Valor recebido
+                  <input type="text" inputMode="decimal" value={paymentAmountInput} onChange={(e) => setPaymentAmountInput(e.target.value)} placeholder="R$ 0,00" className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-bold text-stone-900" />
+                </label>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input type="text" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} placeholder="Observação, ex: parcela 1/3" className="flex-1 rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-2.5" />
-                <button type="button" onClick={addPayment} className="flex items-center justify-center gap-2 rounded-xl bg-stone-900 px-4 py-2.5 font-bold text-white hover:bg-stone-800">
-                  <Plus className="h-4 w-4" /> Adicionar pagamento
-                </button>
-              </div>
+              <label className="block text-xs font-bold text-stone-700">
+                Observação (opcional)
+                <input type="text" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} placeholder="Ex.: parcela 1/3" className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-medium text-stone-900" />
+              </label>
+              <button type="button" onClick={addPayment} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3 font-extrabold text-white transition hover:bg-emerald-900">
+                <Plus className="h-5 w-5" /> Adicionar pagamento
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-stone-200 bg-stone-50 p-3">
               <div>
