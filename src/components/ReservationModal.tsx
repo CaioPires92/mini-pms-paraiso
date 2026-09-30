@@ -4,7 +4,7 @@ import { usePms } from '../context/PmsContext';
 import { calculateDailyCount, formatDateBR, getTodaySaoPaulo, addDays } from '../lib/dateUtils';
 import { formatCurrencyBRL, parseCurrencyInput } from '../lib/currencyUtils';
 import { ConflictAlert } from './ConflictAlert';
-import { ReservationStatus } from '../types';
+import { ReservationStatus, SalesChannel } from '../types';
 
 export const ReservationModal: React.FC = () => {
   const {
@@ -33,6 +33,9 @@ export const ReservationModal: React.FC = () => {
   const [checkIn, setCheckIn] = useState(defaultToday);
   const [checkOut, setCheckOut] = useState(defaultTomorrow);
   const [totalValueInput, setTotalValueInput] = useState('');
+  const [salesChannel, setSalesChannel] = useState<SalesChannel>('WhatsApp');
+  const [depositInput, setDepositInput] = useState('');
+  const [additionalPaymentInput, setAdditionalPaymentInput] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<ReservationStatus>('Reservada');
 
@@ -67,6 +70,9 @@ export const ReservationModal: React.FC = () => {
             : available[0]?.id || '';
         setAccommodationId(chosenAccId);
         setTotalValueInput(init.total_value ? init.total_value.toString() : '');
+        setSalesChannel(init.sales_channel || 'WhatsApp');
+        setDepositInput(init.deposit_amount ? init.deposit_amount.toString() : '');
+        setAdditionalPaymentInput(init.additional_payment_amount ? init.additional_payment_amount.toString() : '');
         setNotes(init.notes || '');
         setStatus(init.status || 'Reservada');
         if (init.document || init.phone || init.email || init.vehicle_plate || init.notes) {
@@ -84,6 +90,9 @@ export const ReservationModal: React.FC = () => {
         setCheckOut(defaultTomorrow);
         setAccommodationId(available[0]?.id || '');
         setTotalValueInput('');
+        setSalesChannel('WhatsApp');
+        setDepositInput('');
+        setAdditionalPaymentInput('');
         setNotes('');
         setStatus('Reservada');
         setShowOptionalFields(false);
@@ -112,6 +121,14 @@ export const ReservationModal: React.FC = () => {
   const totalValue = useMemo(() => {
     return parseCurrencyInput(totalValueInput);
   }, [totalValueInput]);
+
+  const depositAmount = useMemo(() => parseCurrencyInput(depositInput), [depositInput]);
+  const additionalPaymentAmount = useMemo(
+    () => parseCurrencyInput(additionalPaymentInput),
+    [additionalPaymentInput]
+  );
+  const paidAmount = depositAmount + additionalPaymentAmount;
+  const remainingAmount = Math.max(0, totalValue - paidAmount);
 
   const averageDaily = useMemo(() => {
     if (dailyCount > 0 && totalValue > 0) {
@@ -162,6 +179,11 @@ export const ReservationModal: React.FC = () => {
       return;
     }
 
+    if (depositAmount < 0 || additionalPaymentAmount < 0 || paidAmount > totalValue) {
+      setFormError('Os pagamentos não podem ser negativos nem ultrapassar o valor total.');
+      return;
+    }
+
     if (conflictResult.hasConflict) {
       setFormError('Esta acomodação já possui uma reserva neste período.');
       return;
@@ -178,6 +200,9 @@ export const ReservationModal: React.FC = () => {
         check_in: checkIn,
         check_out: checkOut,
         total_value: totalValue,
+        sales_channel: salesChannel,
+        deposit_amount: depositAmount,
+        additional_payment_amount: additionalPaymentAmount,
         notes: notes.trim() || undefined,
         status,
       });
@@ -197,6 +222,9 @@ export const ReservationModal: React.FC = () => {
         check_in: checkIn,
         check_out: checkOut,
         total_value: totalValue,
+        sales_channel: salesChannel,
+        deposit_amount: depositAmount,
+        additional_payment_amount: additionalPaymentAmount,
         notes: notes.trim() || undefined,
         status,
       });
@@ -395,6 +423,62 @@ export const ReservationModal: React.FC = () => {
                     {dailyCount > 0 && totalValue > 0 ? formatCurrencyBRL(averageDaily) : '—'}
                   </span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Canal de venda */}
+          <div>
+            <label className="block text-sm sm:text-base font-bold text-stone-900 mb-1.5">
+              5. Canal de Venda <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={salesChannel}
+              onChange={(e) => setSalesChannel(e.target.value as SalesChannel)}
+              className="w-full px-4 py-3 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-bold"
+            >
+              {(['WhatsApp', 'Site', 'Instagram', 'Telefone', 'Recepção'] as SalesChannel[]).map((channel) => (
+                <option key={channel} value={channel}>{channel}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Controle de pagamentos */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-bold text-stone-900 mb-1.5">Sinal recebido (R$)</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={depositInput}
+                  onChange={(e) => setDepositInput(e.target.value)}
+                  placeholder="Ex: 300,00"
+                  className="w-full px-4 py-3 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 font-bold"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-stone-900 mb-1.5">Restante já pago (R$)</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={additionalPaymentInput}
+                  onChange={(e) => setAdditionalPaymentInput(e.target.value)}
+                  placeholder="Ex: 700,00"
+                  className="w-full px-4 py-3 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 font-bold"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-stone-200 bg-stone-50 p-3">
+              <div>
+                <span className="block text-[10px] font-bold uppercase text-stone-500">Total pago</span>
+                <strong className="text-emerald-800 tabular-nums">{formatCurrencyBRL(paidAmount)}</strong>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold uppercase text-stone-500">Falta receber</span>
+                <strong className={remainingAmount > 0 ? 'text-amber-800 tabular-nums' : 'text-emerald-800 tabular-nums'}>
+                  {formatCurrencyBRL(remainingAmount)}
+                </strong>
               </div>
             </div>
           </div>

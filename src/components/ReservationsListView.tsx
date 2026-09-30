@@ -295,6 +295,8 @@ export const ReservationsListView: React.FC = () => {
                 <th className="py-3.5 px-4">Saída</th>
                 <th className="py-3.5 px-4 text-center">Diárias</th>
                 <th className="py-3.5 px-4 text-right">Valor Total</th>
+                <th className="py-3.5 px-4">Canal</th>
+                <th className="py-3.5 px-4 text-right">Saldo</th>
                 <th className="py-3.5 px-4 text-center">Situação</th>
                 <th className="py-3.5 px-4 text-right">Ver</th>
               </tr>
@@ -302,7 +304,7 @@ export const ReservationsListView: React.FC = () => {
             <tbody className="divide-y-2 divide-stone-100">
               {filteredReservations.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-stone-500 text-base font-medium">
+                  <td colSpan={10} className="py-12 text-center text-stone-500 text-base font-medium">
                     Nenhuma reserva encontrada com os critérios informados.
                   </td>
                 </tr>
@@ -336,6 +338,12 @@ export const ReservationsListView: React.FC = () => {
                       </td>
                       <td className="py-4 px-4 text-right font-extrabold text-stone-900 text-base tabular-nums">
                         {formatCurrencyBRL(res.total_value)}
+                      </td>
+                      <td className="py-4 px-4 font-semibold text-stone-700">
+                        {res.sales_channel || '—'}
+                      </td>
+                      <td className="py-4 px-4 text-right font-bold text-amber-800 tabular-nums">
+                        {formatCurrencyBRL(Math.max(0, res.total_value - (res.deposit_amount || 0) - (res.additional_payment_amount || 0)))}
                       </td>
                       <td className="py-4 px-4 text-center">
                         <span
@@ -406,6 +414,13 @@ export const ReservationsListView: React.FC = () => {
                       {formatCurrencyBRL(res.total_value)}
                     </span>
                   </div>
+                </div>
+
+                <div className="mt-2 flex items-center justify-between text-xs font-bold">
+                  <span className="text-stone-600">Canal: {res.sales_channel || 'Não informado'}</span>
+                  <span className="text-amber-800">
+                    Saldo: {formatCurrencyBRL(Math.max(0, res.total_value - (res.deposit_amount || 0) - (res.additional_payment_amount || 0)))}
+                  </span>
                 </div>
 
                 {res.phone && (

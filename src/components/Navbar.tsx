@@ -7,10 +7,8 @@ import {
   Settings,
   Plus,
   Compass,
-  LogOut,
 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
-import { supabase } from '../lib/supabase';
 
 export const Navbar: React.FC = () => {
   const { activeTab, setActiveTab, openNewReservationModal, settings } = usePms();
@@ -81,14 +79,6 @@ export const Navbar: React.FC = () => {
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 stroke-[2.5]" />
               <span>Nova Reserva</span>
-            </button>
-            <button
-              onClick={() => supabase.auth.signOut()}
-              className="p-2.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-xl transition"
-              aria-label="Sair"
-              title="Sair"
-            >
-              <LogOut className="w-5 h-5" />
             </button>
           </div>
         </div>

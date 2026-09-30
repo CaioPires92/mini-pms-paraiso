@@ -1,4 +1,5 @@
 export type ReservationStatus = 'Reservada' | 'Hospedado' | 'Finalizada' | 'Cancelada';
+export type SalesChannel = 'WhatsApp' | 'Site' | 'Instagram' | 'Telefone' | 'Recepção';
 
 export interface Accommodation {
   id: string;
@@ -19,6 +20,9 @@ export interface Reservation {
   check_in: string; // YYYY-MM-DD
   check_out: string; // YYYY-MM-DD
   total_value: number; // Obrigatório (> 0)
+  sales_channel?: SalesChannel;
+  deposit_amount?: number; // Sinal recebido
+  additional_payment_amount?: number; // Demais pagamentos recebidos
   notes?: string; // Opcional
   status: ReservationStatus;
   created_at: string; // ISO

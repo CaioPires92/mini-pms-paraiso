@@ -107,17 +107,15 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 4000);
   }, []);
 
-  // Load the authenticated user's shared state. Existing local data is used to
-  // seed the database only when this user has no remote state yet.
+  // Load the single shared state. Existing local data seeds the database only
+  // when the shared row does not exist yet.
   useEffect(() => {
     let active = true;
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
       const { data, error } = await supabase
-        .from('pms_state')
+        .from('shared_pms_state')
         .select('accommodations,reservations,settings')
-        .eq('user_id', user.id)
+        .eq('id', 1)
         .maybeSingle();
       if (!active) return;
       if (error) {
@@ -129,8 +127,8 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setReservations(data.reservations as Reservation[]);
         setSettings({ ...DEFAULT_SETTINGS, ...(data.settings as InnSettings) });
       } else {
-        const { error: seedError } = await supabase.from('pms_state').insert({
-          user_id: user.id,
+        const { error: seedError } = await supabase.from('shared_pms_state').insert({
+          id: 1,
           accommodations,
           reservations,
           settings,
@@ -162,10 +160,8 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (!databaseReady) return;
     const timer = window.setTimeout(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { error } = await supabase.from('pms_state').upsert({
-        user_id: user.id,
+      const { error } = await supabase.from('shared_pms_state').upsert({
+        id: 1,
         accommodations,
         reservations,
         settings,

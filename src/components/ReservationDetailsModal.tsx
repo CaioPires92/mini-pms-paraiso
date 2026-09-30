@@ -13,6 +13,7 @@ import {
   Trash2,
   Printer,
   MessageCircle,
+  Store,
 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { formatDateBR, calculateDailyCount, formatDateFullBR } from '../lib/dateUtils';
@@ -39,6 +40,10 @@ export const ReservationDetailsModal: React.FC = () => {
   const acc = accommodations.find((a) => a.id === res.accommodation_id);
   const dailyCount = calculateDailyCount(res.check_in, res.check_out);
   const averageDaily = dailyCount > 0 ? res.total_value / dailyCount : 0;
+  const depositAmount = res.deposit_amount || 0;
+  const additionalPaymentAmount = res.additional_payment_amount || 0;
+  const paidAmount = depositAmount + additionalPaymentAmount;
+  const remainingAmount = Math.max(0, res.total_value - paidAmount);
 
   const handleEdit = () => {
     closeReservationDetails();
@@ -163,6 +168,25 @@ export const ReservationDetailsModal: React.FC = () => {
                   </span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+              <span className="block text-[10px] font-bold uppercase text-stone-500">Canal</span>
+              <strong className="flex items-center gap-1.5 text-stone-900"><Store className="h-4 w-4" />{res.sales_channel || 'Não informado'}</strong>
+            </div>
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+              <span className="block text-[10px] font-bold uppercase text-stone-500">Sinal</span>
+              <strong className="text-stone-900 tabular-nums">{formatCurrencyBRL(depositAmount)}</strong>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+              <span className="block text-[10px] font-bold uppercase text-emerald-700">Total pago</span>
+              <strong className="text-emerald-900 tabular-nums">{formatCurrencyBRL(paidAmount)}</strong>
+            </div>
+            <div className={`rounded-xl border p-3 ${remainingAmount > 0 ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+              <span className={`block text-[10px] font-bold uppercase ${remainingAmount > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>Falta receber</span>
+              <strong className={`tabular-nums ${remainingAmount > 0 ? 'text-amber-900' : 'text-emerald-900'}`}>{formatCurrencyBRL(remainingAmount)}</strong>
             </div>
           </div>
 

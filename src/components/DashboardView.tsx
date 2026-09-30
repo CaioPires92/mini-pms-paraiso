@@ -9,6 +9,7 @@ import {
   Phone,
   MessageCircle,
   Map,
+  WalletCards,
 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { getTodaySaoPaulo, formatDateFullBR, formatDateBR, formatDateShortBR, calculateDailyCount, addDays } from '../lib/dateUtils';
@@ -55,6 +56,13 @@ export const DashboardView: React.FC = () => {
   const upcomingReservations = activeReservations
     .filter((r) => r.check_in > today && r.check_in <= nextWeekEnd)
     .sort((a, b) => a.check_in.localeCompare(b.check_in));
+
+  const totalBooked = activeReservations.reduce((sum, reservation) => sum + reservation.total_value, 0);
+  const totalPaid = activeReservations.reduce(
+    (sum, reservation) => sum + (reservation.deposit_amount || 0) + (reservation.additional_payment_amount || 0),
+    0
+  );
+  const totalOutstanding = Math.max(0, totalBooked - totalPaid);
 
   const getAccName = (id: string) => {
     const acc = accommodations.find((a) => a.id === id);
@@ -190,6 +198,21 @@ export const DashboardView: React.FC = () => {
               {occupiedAccommodationsCount} de {totalUnits} chalés ocupados
             </p>
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border-2 border-stone-200 bg-white p-5">
+          <span className="text-xs font-bold uppercase tracking-wide text-stone-500">Total das reservas ativas</span>
+          <div className="mt-1 text-2xl font-black text-stone-900 tabular-nums">{formatCurrencyBRL(totalBooked)}</div>
+        </div>
+        <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
+          <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-emerald-700"><WalletCards className="h-4 w-4" />Já recebido</span>
+          <div className="mt-1 text-2xl font-black text-emerald-900 tabular-nums">{formatCurrencyBRL(totalPaid)}</div>
+        </div>
+        <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-5">
+          <span className="text-xs font-bold uppercase tracking-wide text-amber-700">Falta receber</span>
+          <div className="mt-1 text-2xl font-black text-amber-900 tabular-nums">{formatCurrencyBRL(totalOutstanding)}</div>
         </div>
       </div>
 
