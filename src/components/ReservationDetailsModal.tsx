@@ -20,7 +20,7 @@ import { usePms } from '../context/PmsContext';
 import { formatDateBR, calculateDailyCount, formatDateFullBR } from '../lib/dateUtils';
 import { formatCurrencyBRL } from '../lib/currencyUtils';
 import { ReservationStatus } from '../types';
-import { getOutstandingAmount, getPaidAmount, getReservationPayments } from '../lib/paymentUtils';
+import { getOutstandingAmount, getReservationPayments } from '../lib/paymentUtils';
 
 export const ReservationDetailsModal: React.FC = () => {
   const {
@@ -43,8 +43,6 @@ export const ReservationDetailsModal: React.FC = () => {
   const dailyCount = calculateDailyCount(res.check_in, res.check_out);
   const averageDaily = dailyCount > 0 ? res.total_value / dailyCount : 0;
   const paymentRecords = getReservationPayments(res);
-  const depositAmount = paymentRecords.filter((payment) => payment.type === 'Sinal').reduce((sum, payment) => sum + payment.amount, 0);
-  const paidAmount = getPaidAmount(res);
   const remainingAmount = getOutstandingAmount(res);
 
   const handleEdit = () => {
@@ -108,6 +106,9 @@ export const ReservationDetailsModal: React.FC = () => {
             <p className="text-base font-bold text-emerald-900 mt-1">
               {acc?.nome || 'Chalé'} · <span className="text-stone-600 font-semibold">{acc?.tipo || ''}</span>
             </p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-stone-500">
+              <Store className="h-3.5 w-3.5" /> Canal: {res.sales_channel || 'Não informado'}
+            </p>
           </div>
           <button
             type="button"
@@ -144,59 +145,25 @@ export const ReservationDetailsModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Valores Financeiros - Compacto e perfeitamente ajustado */}
-          <div className="bg-emerald-50/90 border-2 border-emerald-200 rounded-2xl p-3 sm:p-4 overflow-hidden">
-            <div className="flex items-center justify-between gap-2 sm:gap-3">
-              {/* Valor Total Destacado */}
-              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          {/* Valores financeiros principais */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 flex items-center gap-3 min-w-0">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
                   <DollarSign className="w-5 h-5 stroke-[2.5]" />
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-[10px] sm:text-[11px] font-bold text-emerald-800 uppercase tracking-wider truncate">
+                  <span className="block text-xs font-bold text-emerald-800 uppercase tracking-wider">
                     Valor Total
                   </span>
-                  <span className="text-lg sm:text-2xl font-black text-emerald-950 tabular-nums truncate block">
+                  <span className="text-2xl font-black text-emerald-950 tabular-nums block">
                     {formatCurrencyBRL(res.total_value)}
                   </span>
                 </div>
-              </div>
-
-              {/* Diárias e Média Diária compactos */}
-              <div className="flex items-center gap-2 sm:gap-3 bg-white/95 border border-emerald-200 rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 shrink-0 shadow-2xs">
-                <div className="text-center sm:text-left">
-                  <span className="block text-[9px] sm:text-[10px] font-bold text-stone-500 uppercase tracking-wide">Diárias</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-stone-900 tabular-nums">
-                    {dailyCount} {dailyCount === 1 ? 'dia' : 'dias'}
-                  </span>
-                </div>
-                <div className="h-6 w-px bg-emerald-200" />
-                <div className="text-center sm:text-left">
-                  <span className="block text-[9px] sm:text-[10px] font-bold text-stone-500 uppercase tracking-wide">Média/Dia</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-emerald-900 tabular-nums">
-                    {formatCurrencyBRL(averageDaily)}
-                  </span>
-                </div>
-              </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-              <span className="block text-[10px] font-bold uppercase text-stone-500">Canal</span>
-              <strong className="flex items-center gap-1.5 text-stone-900"><Store className="h-4 w-4" />{res.sales_channel || 'Não informado'}</strong>
-            </div>
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-              <span className="block text-[10px] font-bold uppercase text-stone-500">Sinal</span>
-              <strong className="text-stone-900 tabular-nums">{formatCurrencyBRL(depositAmount)}</strong>
-            </div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-              <span className="block text-[10px] font-bold uppercase text-emerald-700">Total pago</span>
-              <strong className="text-emerald-900 tabular-nums">{formatCurrencyBRL(paidAmount)}</strong>
-            </div>
-            <div className={`rounded-xl border p-3 ${remainingAmount > 0 ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
-              <span className={`block text-[10px] font-bold uppercase ${remainingAmount > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>Falta receber</span>
-              <strong className={`tabular-nums ${remainingAmount > 0 ? 'text-amber-900' : 'text-emerald-900'}`}>{formatCurrencyBRL(remainingAmount)}</strong>
+            <div className={`rounded-2xl border-2 p-4 ${remainingAmount > 0 ? 'border-amber-300 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+              <span className={`block text-xs font-bold uppercase tracking-wider ${remainingAmount > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>Falta receber</span>
+              <span className={`block text-2xl font-black tabular-nums ${remainingAmount > 0 ? 'text-amber-950' : 'text-emerald-950'}`}>{formatCurrencyBRL(remainingAmount)}</span>
+              <span className="mt-1 block text-xs font-semibold text-stone-600">{dailyCount} {dailyCount === 1 ? 'diária' : 'diárias'} · média {formatCurrencyBRL(averageDaily)}/dia</span>
             </div>
           </div>
 
