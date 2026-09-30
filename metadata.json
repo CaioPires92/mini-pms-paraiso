@@ -1,0 +1,7 @@
+{
+  "name": "Pousada Paraíso - Mini PMS",
+  "description": "Sistema de controle interno de reservas, acomodações, ocupação e mapa visual para a Pousada Paraíso.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
