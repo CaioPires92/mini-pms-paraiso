@@ -99,11 +99,13 @@ export const ReservationDetailsModal: React.FC = () => {
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">{res.guest_name}</h2>
-              <span
-                className={`text-xs sm:text-sm px-3.5 py-1.5 rounded-xl border-2 font-black ${currentStatusStyle.bg} ${currentStatusStyle.text}`}
-              >
-                {currentStatusStyle.label}
-              </span>
+              {res.status !== 'Reservada' ? (
+                <span
+                  className={`text-xs sm:text-sm px-3.5 py-1.5 rounded-xl border-2 font-black ${currentStatusStyle.bg} ${currentStatusStyle.text}`}
+                >
+                  {currentStatusStyle.label}
+                </span>
+              ) : null}
             </div>
             <p className="text-base font-bold text-emerald-900 mt-1">
               {acc?.nome || 'Chalé'} · <span className="text-stone-600 font-semibold">{acc?.tipo || ''}</span>
