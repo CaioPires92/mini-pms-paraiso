@@ -1,6 +1,6 @@
 export type ReservationStatus = 'Reservada' | 'Hospedado' | 'Finalizada' | 'Cancelada';
 export type SalesChannel = 'WhatsApp' | 'Site' | 'Booking' | 'Instagram' | 'Telefone' | 'Recepção';
-export type PaymentMethod = 'Pix' | 'Cartão' | 'Dinheiro';
+export type PaymentMethod = 'Pix' | 'Cartão de crédito' | 'Cartão de débito' | 'Cartão' | 'Dinheiro';
 export type PaymentType = 'Pagamento' | 'Sinal' | 'Parcela' | 'Pagamento final' | 'Outro';
 
 export interface ReservationPayment {

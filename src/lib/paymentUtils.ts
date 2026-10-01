@@ -2,9 +2,11 @@ import type { Reservation, ReservationPayment } from '../types';
 
 export function getReservationPayments(reservation: Partial<Reservation>): ReservationPayment[] {
   if (Array.isArray(reservation.payments)) {
-    return reservation.payments.map((payment) =>
-      payment.type === 'Pagamento final' ? { ...payment, type: 'Pagamento' } : payment,
-    );
+    return reservation.payments.map((payment) => ({
+      ...payment,
+      type: payment.type === 'Pagamento final' ? 'Pagamento' : payment.type,
+      method: payment.method === 'Cartão' ? 'Cartão de crédito' : payment.method,
+    }));
   }
 
   const paidAt = reservation.created_at?.slice(0, 10) || new Date().toISOString().slice(0, 10);

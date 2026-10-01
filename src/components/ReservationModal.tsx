@@ -540,7 +540,8 @@ export const ReservationModal: React.FC = () => {
                   Forma de pagamento
                   <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900">
                     <option value="Pix">Pix</option>
-                    <option value="Cartão">Cartão</option>
+                    <option value="Cartão de crédito">Cartão de crédito</option>
+                    <option value="Cartão de débito">Cartão de débito</option>
                     <option value="Dinheiro">Dinheiro</option>
                   </select>
                 </label>
