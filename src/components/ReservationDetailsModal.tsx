@@ -51,6 +51,7 @@ export const ReservationDetailsModal: React.FC = () => {
   };
 
   const handleAddPayment = () => {
+    sessionStorage.setItem('open-payment-form', '1');
     closeReservationDetails();
     openEditReservationModal(res);
     window.setTimeout(() => {

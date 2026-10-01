@@ -45,6 +45,7 @@ export const ReservationModal: React.FC = () => {
   const [status, setStatus] = useState<ReservationStatus>('Reservada');
 
   const [showOptionalFields, setShowOptionalFields] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Available accommodations strictly for the selected period
@@ -56,6 +57,9 @@ export const ReservationModal: React.FC = () => {
   useEffect(() => {
     if (modalReservation.isOpen) {
       setFormError(null);
+      const openPaymentForm = sessionStorage.getItem('open-payment-form') === '1';
+      sessionStorage.removeItem('open-payment-form');
+      setShowPaymentForm(openPaymentForm);
       const init = modalReservation.initialData;
       const initialCheckIn = init?.check_in || defaultToday;
       const initialCheckOut = init?.check_out || defaultTomorrow;
@@ -164,6 +168,7 @@ export const ReservationModal: React.FC = () => {
     setPaymentAmountInput('');
     setPaymentType('Parcela');
     setPaymentNote('');
+    setShowPaymentForm(false);
     setFormError(null);
   };
 
@@ -505,7 +510,22 @@ export const ReservationModal: React.FC = () => {
               </div>
             )}
 
+            {!showPaymentForm ? (
+              <button
+                type="button"
+                onClick={() => setShowPaymentForm(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-700 bg-white px-4 py-3 font-extrabold text-emerald-800 transition hover:bg-emerald-50"
+              >
+                <Plus className="h-5 w-5" /> Adicionar pagamento
+              </button>
+            ) : (
             <div className="rounded-2xl border border-emerald-200 bg-white p-4 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between gap-3">
+                <strong className="text-sm text-stone-900">Novo pagamento</strong>
+                <button type="button" onClick={() => setShowPaymentForm(false)} className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100" aria-label="Fechar formulário de pagamento" title="Fechar">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="min-w-0 text-xs font-bold text-stone-700">
                   Tipo do pagamento
@@ -541,6 +561,7 @@ export const ReservationModal: React.FC = () => {
                 <Plus className="h-5 w-5" /> Adicionar pagamento
               </button>
             </div>
+            )}
             <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-stone-200 bg-stone-50 p-3">
               <div>
                 <span className="block text-[10px] font-bold uppercase text-stone-500">Total pago</span>
