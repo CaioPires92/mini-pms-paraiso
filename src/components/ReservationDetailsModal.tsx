@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Calendar,
@@ -287,28 +288,6 @@ export const ReservationDetailsModal: React.FC = () => {
             </div>
           )}
 
-          {confirmDelete && (
-            <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-red-950 text-sm">
-              <p className="font-bold text-base">Tem certeza que deseja excluir esta reserva?</p>
-              <p className="mt-1 text-red-900">Esta ação apagará a reserva permanentemente.</p>
-              <div className="mt-3 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(false)}
-                  className="px-4 py-2 bg-white border border-stone-300 rounded-xl text-stone-700 font-bold hover:bg-stone-50 cursor-pointer"
-                >
-                  Voltar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl cursor-pointer"
-                >
-                  Sim, Excluir Definitivamente
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer Actions - Lado a lado de forma intuitiva e sem quebras */}
@@ -364,6 +343,45 @@ export const ReservationDetailsModal: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {confirmDelete
+        ? createPortal(
+            <div
+              className="fixed inset-0 z-[100] grid place-items-center bg-stone-950/65 p-4 backdrop-blur-sm print:hidden"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="delete-reservation-title"
+              aria-describedby="delete-reservation-description"
+            >
+              <div className="w-full max-w-md rounded-3xl border-2 border-red-300 bg-red-50 p-5 text-red-950 shadow-2xl sm:p-6">
+                <p id="delete-reservation-title" className="text-lg font-extrabold">
+                  Tem certeza que deseja excluir esta reserva?
+                </p>
+                <p id="delete-reservation-description" className="mt-1.5 text-sm text-red-900">
+                  Esta ação apagará a reserva permanentemente.
+                </p>
+                <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+                  <button
+                    type="button"
+                    autoFocus
+                    onClick={() => setConfirmDelete(false)}
+                    className="rounded-xl border border-stone-300 bg-white px-4 py-2.5 font-bold text-stone-700 transition hover:bg-stone-50 cursor-pointer"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    className="rounded-xl bg-red-600 px-4 py-2.5 font-bold text-white transition hover:bg-red-700 cursor-pointer"
+                  >
+                    Sim, Excluir Definitivamente
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 };
