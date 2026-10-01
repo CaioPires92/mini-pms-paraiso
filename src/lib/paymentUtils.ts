@@ -1,7 +1,11 @@
 import type { Reservation, ReservationPayment } from '../types';
 
 export function getReservationPayments(reservation: Partial<Reservation>): ReservationPayment[] {
-  if (Array.isArray(reservation.payments)) return reservation.payments;
+  if (Array.isArray(reservation.payments)) {
+    return reservation.payments.map((payment) =>
+      payment.type === 'Pagamento final' ? { ...payment, type: 'Pagamento' } : payment,
+    );
+  }
 
   const paidAt = reservation.created_at?.slice(0, 10) || new Date().toISOString().slice(0, 10);
   const legacy: ReservationPayment[] = [];

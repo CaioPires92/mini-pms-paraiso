@@ -38,7 +38,7 @@ export const ReservationModal: React.FC = () => {
   const [payments, setPayments] = useState<ReservationPayment[]>([]);
   const [paymentAmountInput, setPaymentAmountInput] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Pix');
-  const [paymentType, setPaymentType] = useState<PaymentType>('Sinal');
+  const [paymentType, setPaymentType] = useState<PaymentType>('Pagamento');
   const [paymentDate, setPaymentDate] = useState(defaultToday);
   const [paymentNote, setPaymentNote] = useState('');
   const [notes, setNotes] = useState('');
@@ -64,6 +64,11 @@ export const ReservationModal: React.FC = () => {
       const initialCheckIn = init?.check_in || defaultToday;
       const initialCheckOut = init?.check_out || defaultTomorrow;
       const available = getAvailableAccommodations(initialCheckIn, initialCheckOut, init?.id);
+      setPaymentAmountInput('');
+      setPaymentMethod('Pix');
+      setPaymentType('Pagamento');
+      setPaymentDate(defaultToday);
+      setPaymentNote('');
 
       if (init) {
         setGuestName(init.guest_name || '');
@@ -100,11 +105,6 @@ export const ReservationModal: React.FC = () => {
         setTotalValueInput('');
         setSalesChannel('WhatsApp');
         setPayments([]);
-        setPaymentAmountInput('');
-        setPaymentMethod('Pix');
-        setPaymentType('Sinal');
-        setPaymentDate(defaultToday);
-        setPaymentNote('');
         setNotes('');
         setStatus('Reservada');
         setShowOptionalFields(false);
@@ -166,7 +166,7 @@ export const ReservationModal: React.FC = () => {
       },
     ]);
     setPaymentAmountInput('');
-    setPaymentType('Parcela');
+    setPaymentType('Pagamento');
     setPaymentNote('');
     setShowPaymentForm(false);
     setFormError(null);
@@ -530,9 +530,9 @@ export const ReservationModal: React.FC = () => {
                 <label className="min-w-0 text-xs font-bold text-stone-700">
                   Tipo do pagamento
                   <select value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900">
+                    <option value="Pagamento">Pagamento</option>
                     <option value="Sinal">Sinal</option>
                     <option value="Parcela">Parcela</option>
-                    <option value="Pagamento final">Pagamento final</option>
                     <option value="Outro">Outro</option>
                   </select>
                 </label>
