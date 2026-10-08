@@ -61,10 +61,6 @@ export const ReservationModal: React.FC = () => {
     return new Set(availableAccommodations.map((accommodation) => accommodation.id));
   }, [availableAccommodations]);
 
-  const unavailableAccommodations = useMemo(() => {
-    return activeAccommodations.filter((accommodation) => !availableAccommodationIds.has(accommodation.id));
-  }, [activeAccommodations, availableAccommodationIds]);
-
   // Populate form when modal opens
   useEffect(() => {
     if (modalReservation.isOpen) {
@@ -395,88 +391,69 @@ export const ReservationModal: React.FC = () => {
                 <div
                   role="radiogroup"
                   aria-label="Escolha o chalé"
-                  className="max-h-80 overflow-y-auto rounded-2xl border-2 border-stone-300 bg-stone-50 p-2.5 space-y-3"
+                  className="max-h-80 overflow-y-auto rounded-2xl border-2 border-stone-300 bg-stone-50 p-2.5 space-y-2"
                 >
-                  <section aria-labelledby="available-accommodations-title">
-                    <div
-                      id="available-accommodations-title"
-                      className="px-1.5 pb-1.5 text-xs font-black uppercase tracking-wide text-emerald-800"
-                    >
-                      Disponíveis ({availableAccommodations.length})
-                    </div>
-                    <div className="space-y-2">
-                      {availableAccommodations.map((acc) => {
-                        const isSelected = accommodationId === acc.id;
-                        return (
-                          <button
-                            key={acc.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={isSelected}
-                            onClick={() => setAccommodationId(acc.id)}
-                            className={`w-full p-3.5 rounded-xl border-2 text-left transition flex items-center gap-3 cursor-pointer ${
-                              isSelected
-                                ? 'bg-emerald-50 border-emerald-700 ring-2 ring-emerald-200'
-                                : 'bg-white border-stone-200 hover:border-emerald-400 hover:bg-emerald-50/50'
-                            }`}
-                          >
-                            <CheckCircle2 className={`w-6 h-6 shrink-0 ${isSelected ? 'text-emerald-700' : 'text-emerald-500'}`} />
-                            <span className="min-w-0 flex-1">
-                              <span className="block text-base font-extrabold text-stone-950">{acc.nome}</span>
-                              <span className="block mt-0.5 text-sm font-medium text-stone-600">{acc.tipo}</span>
-                            </span>
-                            <span className="shrink-0 rounded-lg bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-800">
-                              Livre
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
+                  {activeAccommodations.map((acc) => {
+                    const isAvailable = availableAccommodationIds.has(acc.id);
+                    const isSelected = accommodationId === acc.id;
+                    const conflict = isAvailable
+                      ? undefined
+                      : checkAccommodationConflict(acc.id, checkIn, checkOut, editingId).conflictingReservation;
 
-                  {unavailableAccommodations.length > 0 && (
-                    <section aria-labelledby="unavailable-accommodations-title" className="border-t-2 border-stone-200 pt-3">
-                      <div
-                        id="unavailable-accommodations-title"
-                        className="px-1.5 pb-1.5 text-xs font-black uppercase tracking-wide text-red-700"
+                    if (!isAvailable) {
+                      return (
+                        <div
+                          key={acc.id}
+                          role="radio"
+                          aria-checked={isSelected}
+                          aria-disabled="true"
+                          className={`w-full p-3.5 rounded-xl border-2 text-left flex items-center gap-3 ${
+                            isSelected
+                              ? 'bg-red-50 border-red-500 ring-2 ring-red-200'
+                              : 'bg-red-50/70 border-red-200'
+                          }`}
+                        >
+                          <Bed className="w-6 h-6 shrink-0 text-red-500" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-base font-extrabold text-stone-800">{acc.nome}</span>
+                            <span className="block mt-0.5 text-sm font-medium text-stone-600">{acc.tipo}</span>
+                            {conflict && (
+                              <span className="block mt-1 text-xs font-bold text-red-700">
+                                Reservado de {formatDateBR(conflict.check_in)} a {formatDateBR(conflict.check_out)}
+                              </span>
+                            )}
+                          </span>
+                          <span className="shrink-0 rounded-lg bg-red-100 px-2 py-1 text-xs font-black text-red-700">
+                            Ocupado
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        onClick={() => setAccommodationId(acc.id)}
+                        className={`w-full p-3.5 rounded-xl border-2 text-left transition flex items-center gap-3 cursor-pointer ${
+                          isSelected
+                            ? 'bg-emerald-50 border-emerald-700 ring-2 ring-emerald-200'
+                            : 'bg-white border-stone-200 hover:border-emerald-400 hover:bg-emerald-50/50'
+                        }`}
                       >
-                        Ocupados no período ({unavailableAccommodations.length})
-                      </div>
-                      <div className="space-y-2">
-                        {unavailableAccommodations.map((acc) => {
-                          const conflict = checkAccommodationConflict(acc.id, checkIn, checkOut, editingId);
-                          const isSelected = accommodationId === acc.id;
-                          return (
-                            <div
-                              key={acc.id}
-                              role="radio"
-                              aria-checked={isSelected}
-                              aria-disabled="true"
-                              className={`w-full p-3.5 rounded-xl border-2 text-left flex items-center gap-3 ${
-                                isSelected
-                                  ? 'bg-red-50 border-red-500 ring-2 ring-red-200'
-                                  : 'bg-red-50/70 border-red-200'
-                              }`}
-                            >
-                              <Bed className="w-6 h-6 shrink-0 text-red-500" />
-                              <span className="min-w-0 flex-1">
-                                <span className="block text-base font-extrabold text-stone-800">{acc.nome}</span>
-                                <span className="block mt-0.5 text-sm font-medium text-stone-600">{acc.tipo}</span>
-                                {conflict.conflictingReservation && (
-                                  <span className="block mt-1 text-xs font-bold text-red-700">
-                                    Reservado de {formatDateBR(conflict.conflictingReservation.check_in)} a {formatDateBR(conflict.conflictingReservation.check_out)}
-                                  </span>
-                                )}
-                              </span>
-                              <span className="shrink-0 rounded-lg bg-red-100 px-2 py-1 text-xs font-black text-red-700">
-                                Ocupado
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
+                        <CheckCircle2 className={`w-6 h-6 shrink-0 ${isSelected ? 'text-emerald-700' : 'text-emerald-500'}`} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-base font-extrabold text-stone-950">{acc.nome}</span>
+                          <span className="block mt-0.5 text-sm font-medium text-stone-600">{acc.tipo}</span>
+                        </span>
+                        <span className="shrink-0 rounded-lg bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-800">
+                          Livre
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="w-full px-4 py-3.5 text-stone-500 bg-stone-100 border-2 border-stone-300 rounded-2xl text-sm sm:text-base italic flex items-center gap-3">
