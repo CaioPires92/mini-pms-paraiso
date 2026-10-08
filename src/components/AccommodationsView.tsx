@@ -10,6 +10,12 @@ import {
   Layers,
   Info,
   Calendar,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUp,
+  ChevronsDown,
+  ListOrdered,
+  GripVertical,
 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { Accommodation } from '../types';
@@ -22,6 +28,8 @@ export const AccommodationsView: React.FC = () => {
     createAccommodation,
     batchCreateAccommodations,
     updateAccommodation,
+    moveAccommodation,
+    reorderAccommodation,
     deleteAccommodation,
     openNewReservationModal,
   } = usePms();
@@ -32,6 +40,9 @@ export const AccommodationsView: React.FC = () => {
   const [isSingleModalOpen, setIsSingleModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [editingAcc, setEditingAcc] = useState<Accommodation | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  const [draggedAccommodationId, setDraggedAccommodationId] = useState<string | null>(null);
+  const [dragTargetId, setDragTargetId] = useState<string | null>(null);
 
   // Single Form State
   const [singleName, setSingleName] = useState('');
@@ -152,7 +163,21 @@ export const AccommodationsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-end gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsReordering((current) => !current)}
+            className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 ${
+              isReordering
+                ? 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-300'
+                : 'bg-stone-100 hover:bg-stone-200 text-stone-800'
+            }`}
+            title="Alterar a ordem exibida no mapa de reservas"
+          >
+            <ListOrdered className="w-4 h-4" />
+            <span>{isReordering ? 'Concluir ordem' : 'Ordenar chalés'}</span>
+          </button>
+
           <button
             onClick={handleOpenBatch}
             className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl transition flex items-center gap-1.5"
@@ -193,8 +218,14 @@ export const AccommodationsView: React.FC = () => {
         </span>
       </div>
 
+      {isReordering && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 text-xs text-emerald-950">
+          Arraste os chalés pela alça para definir a ordem. No celular, você também pode usar as setas. A alteração é salva automaticamente e vale para o mapa de reservas.
+        </div>
+      )}
+
       {/* Accommodations Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={isReordering ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}>
         {accommodations.map((acc) => {
           // Check if occupied today
           const occupiedToday = reservations.some(
@@ -209,6 +240,109 @@ export const AccommodationsView: React.FC = () => {
           const totalBookings = reservations.filter(
             (r) => r.accommodation_id === acc.id && r.status !== 'Cancelada'
           ).length;
+
+          const accommodationIndex = accommodations.findIndex((item) => item.id === acc.id);
+
+          if (isReordering) {
+            const isFirst = accommodationIndex === 0;
+            const isLast = accommodationIndex === accommodations.length - 1;
+
+            return (
+              <div
+                key={acc.id}
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = 'move';
+                  event.dataTransfer.setData('text/plain', acc.id);
+                  setDraggedAccommodationId(acc.id);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = 'move';
+                  setDragTargetId(acc.id);
+                }}
+                onDragLeave={() => setDragTargetId((current) => current === acc.id ? null : current)}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const draggedId = draggedAccommodationId ?? event.dataTransfer.getData('text/plain');
+                  if (draggedId) reorderAccommodation(draggedId, acc.id);
+                  setDraggedAccommodationId(null);
+                  setDragTargetId(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedAccommodationId(null);
+                  setDragTargetId(null);
+                }}
+                className={`bg-white rounded-2xl border shadow-xs p-3 flex items-center gap-3 transition ${
+                  dragTargetId === acc.id && draggedAccommodationId !== acc.id
+                    ? 'border-emerald-500 ring-2 ring-emerald-200'
+                    : 'border-stone-200'
+                } ${draggedAccommodationId === acc.id ? 'opacity-40' : ''} ${
+                  acc.ativo ? '' : 'opacity-60 bg-stone-50'
+                }`}
+              >
+                <span
+                  draggable
+                  className="shrink-0 cursor-grab active:cursor-grabbing"
+                  title="Arraste para mudar a posição"
+                  aria-label={`Arrastar ${acc.nome}`}
+                >
+                  <GripVertical className="w-5 h-5 text-stone-400" aria-hidden="true" />
+                </span>
+                <span className="w-7 text-center text-xs font-bold tabular-nums text-stone-400">
+                  {accommodationIndex + 1}
+                </span>
+                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-800 shrink-0">
+                  <Bed className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-sm text-stone-900 truncate">{acc.nome}</div>
+                  <div className="text-xs text-stone-500 truncate">{acc.tipo}</div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => moveAccommodation(acc.id, 'top')}
+                    disabled={isFirst}
+                    className="p-2 text-stone-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg disabled:opacity-25 disabled:pointer-events-none"
+                    title="Mover para o início"
+                    aria-label={`Mover ${acc.nome} para o início`}
+                  >
+                    <ChevronsUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveAccommodation(acc.id, 'up')}
+                    disabled={isFirst}
+                    className="p-2 text-stone-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg disabled:opacity-25 disabled:pointer-events-none"
+                    title="Subir uma posição"
+                    aria-label={`Subir ${acc.nome} uma posição`}
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveAccommodation(acc.id, 'down')}
+                    disabled={isLast}
+                    className="p-2 text-stone-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg disabled:opacity-25 disabled:pointer-events-none"
+                    title="Descer uma posição"
+                    aria-label={`Descer ${acc.nome} uma posição`}
+                  >
+                    <ArrowDown className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveAccommodation(acc.id, 'bottom')}
+                    disabled={isLast}
+                    className="p-2 text-stone-600 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg disabled:opacity-25 disabled:pointer-events-none"
+                    title="Mover para o fim"
+                    aria-label={`Mover ${acc.nome} para o fim`}
+                  >
+                    <ChevronsDown className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div

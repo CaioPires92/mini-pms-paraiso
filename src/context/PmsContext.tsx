@@ -70,6 +70,8 @@ interface PmsContextType {
   createAccommodation: (data: Omit<Accommodation, 'id' | 'created_at'>) => Accommodation;
   batchCreateAccommodations: (baseName: string, tipo: string, count: number) => void;
   updateAccommodation: (id: string, data: Partial<Accommodation>) => void;
+  moveAccommodation: (id: string, direction: 'up' | 'down' | 'top' | 'bottom') => void;
+  reorderAccommodation: (draggedId: string, targetId: string) => void;
   deleteAccommodation: (id: string) => { success: boolean; error?: string };
 
   updateSettings: (data: Partial<InnSettings>) => void;
@@ -445,6 +447,48 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [showToast]
   );
 
+  const moveAccommodation = useCallback(
+    (id: string, direction: 'up' | 'down' | 'top' | 'bottom') => {
+      setAccommodations((prev) => {
+        const currentIndex = prev.findIndex((accommodation) => accommodation.id === id);
+        if (currentIndex === -1) return prev;
+
+        const lastIndex = prev.length - 1;
+        const targetIndex =
+          direction === 'top'
+            ? 0
+            : direction === 'bottom'
+              ? lastIndex
+              : direction === 'up'
+                ? Math.max(0, currentIndex - 1)
+                : Math.min(lastIndex, currentIndex + 1);
+
+        if (targetIndex === currentIndex) return prev;
+
+        const reordered = [...prev];
+        const [movedAccommodation] = reordered.splice(currentIndex, 1);
+        reordered.splice(targetIndex, 0, movedAccommodation);
+        return reordered;
+      });
+    },
+    []
+  );
+
+  const reorderAccommodation = useCallback((draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+
+    setAccommodations((prev) => {
+      const draggedIndex = prev.findIndex((accommodation) => accommodation.id === draggedId);
+      const targetIndex = prev.findIndex((accommodation) => accommodation.id === targetId);
+      if (draggedIndex === -1 || targetIndex === -1) return prev;
+
+      const reordered = [...prev];
+      const [draggedAccommodation] = reordered.splice(draggedIndex, 1);
+      reordered.splice(targetIndex, 0, draggedAccommodation);
+      return reordered;
+    });
+  }, []);
+
   const deleteAccommodation = useCallback(
     (id: string) => {
       // Check if there are active (non-cancelled) reservations for this accommodation
@@ -583,6 +627,8 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createAccommodation,
       batchCreateAccommodations,
       updateAccommodation,
+      moveAccommodation,
+      reorderAccommodation,
       deleteAccommodation,
       updateSettings,
       exportData,
@@ -612,6 +658,8 @@ export const PmsProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createAccommodation,
       batchCreateAccommodations,
       updateAccommodation,
+      moveAccommodation,
+      reorderAccommodation,
       deleteAccommodation,
       updateSettings,
       exportData,
