@@ -329,7 +329,7 @@ export const OccupancyMapView: React.FC = () => {
                               openNewReservationModal({
                                 accommodation_id: acc.id,
                                 check_in: dStr,
-                                check_out: addDays(dStr, 2),
+                                check_out: addDays(dStr, 1),
                               })
                             }
                             title={`Clique para reservar ${acc.nome} a partir de ${formatDateBR(dStr)}`}

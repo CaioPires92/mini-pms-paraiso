@@ -53,6 +53,14 @@ export const ReservationModal: React.FC = () => {
     return getAvailableAccommodations(checkIn, checkOut, editingId);
   }, [getAvailableAccommodations, checkIn, checkOut, editingId]);
 
+  const activeAccommodations = useMemo(() => {
+    return accommodations.filter((accommodation) => accommodation.ativo);
+  }, [accommodations]);
+
+  const availableAccommodationIds = useMemo(() => {
+    return new Set(availableAccommodations.map((accommodation) => accommodation.id));
+  }, [availableAccommodations]);
+
   // Populate form when modal opens
   useEffect(() => {
     if (modalReservation.isOpen) {
@@ -79,7 +87,7 @@ export const ReservationModal: React.FC = () => {
         setCheckIn(initialCheckIn);
         setCheckOut(initialCheckOut);
         const chosenAccId =
-          init.accommodation_id && available.some((a) => a.id === init.accommodation_id)
+          init.accommodation_id && accommodations.some((a) => a.id === init.accommodation_id && a.ativo)
             ? init.accommodation_id
             : available[0]?.id || '';
         setAccommodationId(chosenAccId);
@@ -110,20 +118,14 @@ export const ReservationModal: React.FC = () => {
         setShowOptionalFields(false);
       }
     }
-  }, [modalReservation.isOpen, modalReservation.initialData, getAvailableAccommodations, defaultToday, defaultTomorrow]);
+  }, [modalReservation.isOpen, modalReservation.initialData, getAvailableAccommodations, accommodations, defaultToday, defaultTomorrow]);
 
-  // Keep accommodationId valid if dates change
+  // Preserve the user's choice when dates create a conflict. Only replace an
+  // accommodation that no longer exists or is inactive.
   useEffect(() => {
-    if (!checkIn || !checkOut || checkOut <= checkIn) return;
-    if (availableAccommodations.length > 0) {
-      const isStillAvailable = availableAccommodations.some((a) => a.id === accommodationId);
-      if (!isStillAvailable) {
-        setAccommodationId(availableAccommodations[0].id);
-      }
-    } else {
-      setAccommodationId('');
-    }
-  }, [availableAccommodations, accommodationId, checkIn, checkOut]);
+    if (accommodationId && activeAccommodations.some((a) => a.id === accommodationId)) return;
+    setAccommodationId(availableAccommodations[0]?.id || activeAccommodations[0]?.id || '');
+  }, [activeAccommodations, availableAccommodations, accommodationId]);
 
   // Real-time calculations
   const dailyCount = useMemo(() => {
@@ -339,6 +341,7 @@ export const ReservationModal: React.FC = () => {
                 <input
                   type="date"
                   value={checkIn}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
                   onChange={(e) => {
                     const newCheckIn = e.target.value;
                     setCheckIn(newCheckIn);
@@ -346,10 +349,10 @@ export const ReservationModal: React.FC = () => {
                       setCheckOut(addDays(newCheckIn, 1));
                     }
                   }}
-                  className="w-full px-4 py-3 pl-11 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-medium transition cursor-pointer"
+                  className="w-full min-h-16 px-4 py-4 pl-13 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-lg sm:text-xl font-bold transition cursor-pointer"
                   required
                 />
-                <Calendar className="w-5 h-5 text-stone-500 absolute left-3.5 top-3.5 pointer-events-none" />
+                <Calendar className="w-6 h-6 text-emerald-800 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
@@ -362,30 +365,29 @@ export const ReservationModal: React.FC = () => {
                   type="date"
                   value={checkOut}
                   min={addDays(checkIn, 1)}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  className="w-full px-4 py-3 pl-11 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-medium transition cursor-pointer"
+                  className="w-full min-h-16 px-4 py-4 pl-13 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-lg sm:text-xl font-bold transition cursor-pointer"
                   required
                 />
-                <Calendar className="w-5 h-5 text-stone-500 absolute left-3.5 top-3.5 pointer-events-none" />
+                <Calendar className="w-6 h-6 text-emerald-800 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
           </div>
 
-          {/* 3. Acomodação (Somente disponíveis) */}
+          {/* 3. Acomodação */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-sm sm:text-base font-bold text-stone-900">
                 3. Escolha o Chalé <span className="text-red-600">*</span>
               </label>
-              {availableAccommodations.length > 0 && (
-                <span className="text-xs sm:text-sm font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-                  {availableAccommodations.length} {availableAccommodations.length === 1 ? 'chalé livre' : 'chalés livres'}
-                </span>
-              )}
+              <span className="text-xs sm:text-sm font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+                {availableAccommodations.length} de {activeAccommodations.length} livres
+              </span>
             </div>
 
             <div className="relative">
-              {availableAccommodations.length > 0 ? (
+              {activeAccommodations.length > 0 ? (
                 <>
                   <select
                     value={accommodationId}
@@ -393,11 +395,14 @@ export const ReservationModal: React.FC = () => {
                     className="w-full px-4 py-3.5 pl-11 pr-10 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-bold transition appearance-none cursor-pointer"
                     required
                   >
-                    {availableAccommodations.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.nome} ({acc.tipo})
-                      </option>
-                    ))}
+                    {activeAccommodations.map((acc) => {
+                      const isAvailable = availableAccommodationIds.has(acc.id);
+                      return (
+                        <option key={acc.id} value={acc.id} disabled={!isAvailable}>
+                          {acc.nome} ({acc.tipo}){isAvailable ? '' : ' — ocupado no período'}
+                        </option>
+                      );
+                    })}
                   </select>
                   <Bed className="w-5 h-5 text-stone-500 absolute left-3.5 top-4 pointer-events-none" />
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-stone-600">
@@ -407,7 +412,7 @@ export const ReservationModal: React.FC = () => {
               ) : (
                 <div className="w-full px-4 py-3.5 pl-11 text-stone-500 bg-stone-100 border-2 border-stone-300 rounded-2xl text-sm sm:text-base italic flex items-center">
                   <Bed className="w-5 h-5 text-stone-400 absolute left-3.5 top-4" />
-                  <span>Nenhum chalé disponível para as datas selecionadas</span>
+                  <span>Nenhum chalé ativo cadastrado</span>
                 </div>
               )}
             </div>
