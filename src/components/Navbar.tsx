@@ -7,8 +7,10 @@ import {
   Settings,
   Plus,
   Compass,
+  LogOut,
 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
+import { supabase } from '../lib/supabase';
 
 export const Navbar: React.FC = () => {
   const { activeTab, setActiveTab, openNewReservationModal, settings } = usePms();
@@ -73,6 +75,15 @@ export const Navbar: React.FC = () => {
 
           {/* Primary Action Button */}
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => void supabase.auth.signOut()}
+              className="p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-900 rounded-xl"
+              title="Sair da conta"
+              aria-label="Sair da conta"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
             <button
               onClick={() => openNewReservationModal()}
               className="px-3 sm:px-5 py-2 sm:py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 sm:gap-2 whitespace-nowrap cursor-pointer active:scale-98"
