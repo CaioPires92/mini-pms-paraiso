@@ -3,18 +3,14 @@ import {
   Building2,
   Clock,
   Download,
-  Upload,
-  RotateCcw,
   CheckCircle2,
-  AlertTriangle,
-  Info,
   Phone,
   MapPin,
 } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 
 export const SettingsView: React.FC = () => {
-  const { settings, updateSettings, exportData, importData, resetData } = usePms();
+  const { settings, updateSettings, exportData } = usePms();
 
   const [innName, setInnName] = useState(settings.inn_name);
   const [phone, setPhone] = useState(settings.phone);
@@ -24,11 +20,10 @@ export const SettingsView: React.FC = () => {
   const [checkoutTime, setCheckoutTime] = useState(settings.default_checkout_time);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
+    void updateSettings({
       inn_name: innName.trim(),
       phone: phone.trim(),
       whatsapp: whatsapp.trim(),
@@ -38,24 +33,6 @@ export const SettingsView: React.FC = () => {
     });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        const res = importData(content);
-        if (!res.success) {
-          alert(res.error);
-        }
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
   };
 
   return (
@@ -84,7 +61,7 @@ export const SettingsView: React.FC = () => {
         </div>
 
         <form onSubmit={handleSaveProfile} className="p-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-xs font-semibold text-stone-700 uppercase mb-1">
                 Nome da Pousada
@@ -212,68 +189,6 @@ export const SettingsView: React.FC = () => {
               </button>
             </div>
 
-            {/* Importar */}
-            <div className="p-4 bg-stone-50 rounded-xl border border-stone-200/80 flex flex-col justify-between">
-              <div>
-                <span className="font-bold text-stone-900 text-sm block">Restaurar de Arquivo</span>
-                <p className="text-xs text-stone-500 mt-1">
-                  Selecione um arquivo de backup JSON previamente exportado.
-                </p>
-              </div>
-              <label className="mt-4 px-4 py-2 bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer">
-                <Upload className="w-4 h-4 text-stone-600" />
-                <span>Importar Arquivo JSON</span>
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Reset Demo Data */}
-          <div className="pt-3 border-t border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-xs font-bold text-stone-800 block">
-                Restaurar Dados Padrão de Demonstração
-              </span>
-              <span className="text-[11px] text-stone-500">
-                Restaura os chalés de exemplo e reservas em torno da data de hoje.
-              </span>
-            </div>
-
-            {!confirmReset ? (
-              <button
-                type="button"
-                onClick={() => setConfirmReset(true)}
-                className="px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-xl transition flex items-center gap-1 self-start sm:self-auto"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Restaurar Padrão</span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmReset(false)}
-                  className="px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-100 rounded-lg"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetData();
-                    setConfirmReset(false);
-                  }}
-                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition"
-                >
-                  Confirmar Restauração
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

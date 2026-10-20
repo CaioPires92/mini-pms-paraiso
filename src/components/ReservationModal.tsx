@@ -191,7 +191,7 @@ export const ReservationModal: React.FC = () => {
 
   if (!modalReservation.isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -231,7 +231,7 @@ export const ReservationModal: React.FC = () => {
     }
 
     if (isEdit && editingId) {
-      const res = updateReservation(editingId, {
+      const res = await updateReservation(editingId, {
         guest_name: guestName.trim(),
         document: document.trim() || undefined,
         phone: phone.trim() || undefined,
@@ -254,7 +254,7 @@ export const ReservationModal: React.FC = () => {
         return;
       }
     } else {
-      const res = createReservation({
+      const res = await createReservation({
         guest_name: guestName.trim(),
         document: document.trim() || undefined,
         phone: phone.trim() || undefined,

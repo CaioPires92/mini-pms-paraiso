@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import type { Session } from '@supabase/supabase-js';
 import { PmsProvider, usePms } from './context/PmsContext';
+import { supabase } from './lib/supabase';
+import { AuthScreen } from './components/AuthScreen';
 import { Navbar } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
 import { OccupancyMapView } from './components/OccupancyMapView';
@@ -58,8 +61,16 @@ const MainContent: React.FC = () => {
 };
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>();
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+    return () => subscription.unsubscribe();
+  }, []);
+  if (session === undefined) return <div className="min-h-screen bg-stone-50" />;
+  if (!session) return <AuthScreen />;
   return (
-    <PmsProvider>
+    <PmsProvider user={session.user}>
       <MainContent />
     </PmsProvider>
   );

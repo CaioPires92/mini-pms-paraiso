@@ -86,7 +86,7 @@ export const AccommodationsView: React.FC = () => {
   };
 
   // Submit Single Form
-  const handleSubmitSingle = (e: React.FormEvent) => {
+  const handleSubmitSingle = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -96,24 +96,25 @@ export const AccommodationsView: React.FC = () => {
     }
 
     if (editingAcc) {
-      updateAccommodation(editingAcc.id, {
+      await updateAccommodation(editingAcc.id, {
         nome: singleName.trim(),
         tipo: singleType.trim() || 'Chalé',
         ativo: singleActive,
       });
     } else {
-      createAccommodation({
+      const result = await createAccommodation({
         nome: singleName.trim(),
         tipo: singleType.trim() || 'Chalé',
         ativo: singleActive,
       });
+      if (!result.success) { setFormError(result.error || 'Não foi possível criar a acomodação.'); return; }
     }
 
     setIsSingleModalOpen(false);
   };
 
   // Submit Batch Form
-  const handleSubmitBatch = (e: React.FormEvent) => {
+  const handleSubmitBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -127,23 +128,24 @@ export const AccommodationsView: React.FC = () => {
       return;
     }
 
-    batchCreateAccommodations(
+    const result = await batchCreateAccommodations(
       batchBaseName.trim(),
       batchType.trim() || batchBaseName.trim(),
       batchCount
     );
+    if (!result.success) { setFormError(result.error || 'Não foi possível criar as acomodações.'); return; }
 
     setIsBatchModalOpen(false);
   };
 
   // Delete handler with confirmation
-  const handleDelete = (acc: Accommodation) => {
+  const handleDelete = async (acc: Accommodation) => {
     const confirm = window.confirm(
       `Deseja realmente excluir a acomodação "${acc.nome}"?\nEsta ação não poderá ser desfeita.`
     );
     if (!confirm) return;
 
-    const res = deleteAccommodation(acc.id);
+    const res = await deleteAccommodation(acc.id);
     if (!res.success) {
       alert(res.error);
     }

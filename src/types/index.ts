@@ -18,6 +18,7 @@ export interface Accommodation {
   tipo: string; // Ex: "Chalé Casal"
   ativo: boolean;
   created_at: string; // ISO
+  row_version?: number;
 }
 
 export interface Reservation {
@@ -39,6 +40,7 @@ export interface Reservation {
   status: ReservationStatus;
   created_at: string; // ISO
   updated_at: string; // ISO
+  row_version?: number;
 }
 
 export interface InnSettings {
@@ -48,6 +50,7 @@ export interface InnSettings {
   address: string;
   default_checkin_time: string; // Ex: "14:00"
   default_checkout_time: string; // Ex: "12:00"
+  row_version?: number;
 }
 
 export interface ReservationCalculations {
