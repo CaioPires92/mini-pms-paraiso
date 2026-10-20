@@ -8,7 +8,7 @@ type Result = { success: boolean; error?: string };
 type Tab = 'dashboard' | 'mapa' | 'reservas' | 'acomodacoes' | 'configuracoes';
 interface ModalReservationState { isOpen: boolean; mode: 'create' | 'edit'; initialData?: Partial<Reservation>; }
 interface PmsContextType {
-  accommodations: Accommodation[]; reservations: Reservation[]; settings: InnSettings; loading: boolean;
+  accommodations: Accommodation[]; reservations: Reservation[]; settings: InnSettings; loading: boolean; loadError?: string;
   activeTab: Tab; setActiveTab: (tab: Tab) => void; modalReservation: ModalReservationState;
   openNewReservationModal: (prefill?: Partial<Reservation>) => void; openEditReservationModal: (reservation: Reservation) => void; closeReservationModal: () => void;
   selectedReservationDetails: Reservation | null; openReservationDetails: (reservation: Reservation) => void; closeReservationDetails: () => void;
@@ -37,6 +37,7 @@ export const PmsProvider: React.FC<{ children: React.ReactNode; user: User }> = 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [settings, setSettings] = useState<InnSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('mapa');
   const [modalReservation, setModalReservation] = useState<ModalReservationState>({ isOpen: false, mode: 'create' });
   const [selectedReservationDetails, setSelectedReservationDetails] = useState<Reservation | null>(null);
@@ -59,17 +60,20 @@ export const PmsProvider: React.FC<{ children: React.ReactNode; user: User }> = 
     let alive = true;
     const boot = async () => {
       setLoading(true);
-      const { data: memberships, error: membershipError } = await supabase.from('inn_members').select('inn_id').eq('user_id', user.id).limit(1);
-      if (membershipError) { if (alive) showToast(messageFrom(membershipError), 'error'); return; }
-      let nextInnId = memberships?.[0]?.inn_id;
-      if (!nextInnId) {
-        const { data, error } = await supabase.from('inns').insert({ owner_id: user.id, name: 'Minha Pousada' }).select('id').single();
-        if (error || !data) { if (alive) showToast(messageFrom(error), 'error'); return; }
-        nextInnId = data.id;
-      }
-      try { await refresh(nextInnId); if (alive) setInnId(nextInnId); }
-      catch (error) { if (alive) showToast(error instanceof Error ? error.message : 'Erro ao carregar dados.', 'error'); }
-      finally { if (alive) setLoading(false); }
+      try {
+        const { data: memberships, error: membershipError } = await supabase.from('inn_members').select('inn_id').eq('user_id', user.id).limit(1);
+        if (membershipError) throw new Error(messageFrom(membershipError));
+        let nextInnId = memberships?.[0]?.inn_id;
+        if (!nextInnId) {
+          const { data, error } = await supabase.rpc('create_inn_for_current_user');
+          if (error || !data) throw new Error(messageFrom(error));
+          nextInnId = data;
+        }
+        await refresh(nextInnId);
+        if (alive) setInnId(nextInnId);
+      } catch (error) {
+        if (alive) setLoadError(error instanceof Error ? error.message : 'Erro ao carregar a pousada.');
+      } finally { if (alive) setLoading(false); }
     };
     void boot();
     return () => { alive = false; };
@@ -142,7 +146,7 @@ export const PmsProvider: React.FC<{ children: React.ReactNode; user: User }> = 
   const updateSettings = useCallback(async (data: Partial<InnSettings>) => { if (!innId) return; const current = settings as InnSettings & { row_version?: number }; const { data: updated, error } = await supabase.from('inn_settings').update(data).eq('inn_id', innId).eq('row_version', current.row_version ?? 1).select('inn_id'); if (error || !updated?.length) showToast(error ? messageFrom(error) : 'Configurações alteradas em outro aparelho. Atualize a tela.', 'error'); else { await refresh(innId); showToast('Configurações salvas.'); } }, [innId, refresh, settings, showToast]);
   const exportData = useCallback(() => { const json = JSON.stringify({ version: '2.0', exported_at: new Date().toISOString(), accommodations, reservations, settings }, null, 2); const url = URL.createObjectURL(new Blob([json], { type: 'application/json' })); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `backup_pousada_${getTodaySaoPaulo()}.json`; anchor.click(); URL.revokeObjectURL(url); showToast('Backup exportado.'); }, [accommodations, reservations, settings, showToast]);
 
-  const value = useMemo(() => ({ accommodations, reservations, settings, loading, activeTab, setActiveTab, modalReservation, openNewReservationModal: (prefill?: Partial<Reservation>) => setModalReservation({ isOpen: true, mode: 'create', initialData: prefill }), openEditReservationModal: (reservation: Reservation) => setModalReservation({ isOpen: true, mode: 'edit', initialData: reservation }), closeReservationModal: () => setModalReservation({ isOpen: false, mode: 'create' }), selectedReservationDetails, openReservationDetails: setSelectedReservationDetails, closeReservationDetails: () => setSelectedReservationDetails(null), checkAccommodationConflict, getAvailableAccommodations, createReservation, updateReservation, cancelReservation, deleteReservation, createAccommodation, batchCreateAccommodations, updateAccommodation, moveAccommodation, reorderAccommodation, deleteAccommodation, updateSettings, exportData, toast, showToast }), [accommodations, reservations, settings, loading, activeTab, modalReservation, selectedReservationDetails, checkAccommodationConflict, getAvailableAccommodations, createReservation, updateReservation, cancelReservation, deleteReservation, createAccommodation, batchCreateAccommodations, updateAccommodation, moveAccommodation, reorderAccommodation, deleteAccommodation, updateSettings, exportData, toast, showToast]);
+  const value = useMemo(() => ({ accommodations, reservations, settings, loading, loadError, activeTab, setActiveTab, modalReservation, openNewReservationModal: (prefill?: Partial<Reservation>) => setModalReservation({ isOpen: true, mode: 'create', initialData: prefill }), openEditReservationModal: (reservation: Reservation) => setModalReservation({ isOpen: true, mode: 'edit', initialData: reservation }), closeReservationModal: () => setModalReservation({ isOpen: false, mode: 'create' }), selectedReservationDetails, openReservationDetails: setSelectedReservationDetails, closeReservationDetails: () => setSelectedReservationDetails(null), checkAccommodationConflict, getAvailableAccommodations, createReservation, updateReservation, cancelReservation, deleteReservation, createAccommodation, batchCreateAccommodations, updateAccommodation, moveAccommodation, reorderAccommodation, deleteAccommodation, updateSettings, exportData, toast, showToast }), [accommodations, reservations, settings, loading, loadError, activeTab, modalReservation, selectedReservationDetails, checkAccommodationConflict, getAvailableAccommodations, createReservation, updateReservation, cancelReservation, deleteReservation, createAccommodation, batchCreateAccommodations, updateAccommodation, moveAccommodation, reorderAccommodation, deleteAccommodation, updateSettings, exportData, toast, showToast]);
   return <PmsContext.Provider value={value}>{children}</PmsContext.Provider>;
 };
 export const usePms = () => { const context = useContext(PmsContext); if (!context) throw new Error('usePms must be used within PmsProvider'); return context; };

@@ -14,7 +14,9 @@ import { ReservationDetailsModal } from './components/ReservationDetailsModal';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 const MainContent: React.FC = () => {
-  const { activeTab, toast } = usePms();
+  const { activeTab, toast, loading, loadError } = usePms();
+  if (loading) return <div className="min-h-screen grid place-items-center bg-stone-50 text-sm font-semibold text-stone-600">Carregando sua pousada…</div>;
+  if (loadError) return <div className="min-h-screen grid place-items-center bg-stone-50 p-5"><div className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 text-center"><h1 className="font-bold text-rose-900">Não foi possível abrir a pousada</h1><p className="mt-2 text-sm text-stone-600">{loadError}</p><button className="mt-5 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white" onClick={() => window.location.reload()}>Tentar novamente</button></div></div>;
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 font-sans text-stone-900 pb-24 lg:pb-10 overflow-x-hidden">
@@ -63,8 +65,12 @@ const MainContent: React.FC = () => {
 export default function App() {
   const [session, setSession] = useState<Session | null>();
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+    const setSafeSession = (nextSession: Session | null) => {
+      if (nextSession?.user.is_anonymous) { void supabase.auth.signOut(); setSession(null); return; }
+      setSession(nextSession);
+    };
+    void supabase.auth.getSession().then(({ data }) => setSafeSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => setSafeSession(nextSession));
     return () => subscription.unsubscribe();
   }, []);
   if (session === undefined) return <div className="min-h-screen bg-stone-50" />;
