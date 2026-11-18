@@ -85,8 +85,6 @@ export const DashboardView: React.FC = () => {
     return acc ? acc.nome : 'Chalé';
   };
 
-  const circumference = 2 * Math.PI * 52;
-
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
@@ -117,47 +115,34 @@ export const DashboardView: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-5 self-start md:self-auto">
-            <div className="relative h-32 w-32 shrink-0 sm:h-36 sm:w-36">
-              <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" role="img" aria-label={`Ocupação de ${occupancyPercentage}%`}>
-                <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="9" />
-                <circle
-                  cx="60" cy="60" r="52" fill="none" stroke="var(--color-amber-300)" strokeWidth="9" strokeLinecap="round"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={circumference * (1 - occupancyPercentage / 100)}
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute inset-0 grid place-items-center text-center">
-                <div>
-                  <div className="font-serif text-4xl leading-none tabular-nums">{occupancyPercentage}<span className="text-xl">%</span></div>
-                  <div className="mt-1 text-xs font-medium text-stone-200/60">ocupação</div>
-                </div>
-              </div>
-            </div>
-            <p className="max-w-[9rem] text-sm leading-snug text-stone-200/70">
-              <span className="font-bold text-stone-50">{occupiedAccommodationsCount} de {totalUnits}</span> chalés ocupados hoje
+          <div className="w-full max-w-xs self-start md:self-auto">
+            <p className="text-sm text-stone-200/70">Ocupação hoje</p>
+            <p className="mt-1 font-serif text-5xl leading-none tabular-nums">
+              {occupiedAccommodationsCount}<span className="text-stone-200/50"> de {totalUnits}</span>
             </p>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10" role="img" aria-label={`Ocupação de ${occupancyPercentage}%`}>
+              <div className="h-full rounded-full bg-amber-300 transition-all duration-700" style={{ width: `${occupancyPercentage}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-stone-200/60">chalés ocupados ({occupancyPercentage}%)</p>
           </div>
         </div>
       </section>
 
       {/* Números do dia */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-3 divide-x divide-stone-200 overflow-hidden rounded-3xl border border-stone-200 bg-white">
         {[
-          { label: 'Entradas', value: arrivalsToday.length, icon: <LogIn className="h-4 w-4" />, target: 'entradas-hoje-section', accent: 'bg-amber-300 text-emerald-900' },
-          { label: 'Saídas', value: departuresToday.length, icon: <LogOut className="h-4 w-4" />, target: 'saidas-hoje-section', accent: 'bg-indigo-100 text-indigo-700' },
-          { label: 'Hospedados', value: currentGuests.length, icon: <Bed className="h-4 w-4" />, target: undefined, accent: 'bg-emerald-100 text-emerald-700' },
+          { label: 'Entradas', value: arrivalsToday.length, target: 'entradas-hoje-section' },
+          { label: 'Saídas', value: departuresToday.length, target: 'saidas-hoje-section' },
+          { label: 'Hospedados', value: currentGuests.length, target: undefined },
         ].map((card) => (
           <button
             key={card.label}
             type="button"
             disabled={!card.target}
             onClick={() => card.target && scrollTo(card.target)}
-            className="group rounded-3xl border border-stone-200 bg-white p-4 text-left transition enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_10px_28px_rgba(12,34,16,0.08)] sm:p-6"
+            className="px-4 py-5 text-left transition enabled:hover:bg-stone-50 sm:px-6"
           >
-            <span className={`grid h-9 w-9 place-items-center rounded-full ${card.accent}`}>{card.icon}</span>
-            <div className="mt-4 font-serif text-5xl leading-none text-emerald-900 tabular-nums sm:text-6xl">{card.value}</div>
+            <div className="font-display text-3xl font-extrabold leading-none text-emerald-900 tabular-nums sm:text-4xl">{card.value}</div>
             <div className="mt-2 text-sm font-semibold text-stone-600">{card.label}</div>
           </button>
         ))}

@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Search,
-  Plus,
-  Bed,
-  Phone,
-  ChevronRight,
-  X,
-} from 'lucide-react';
+import { Search, X, ChevronRight } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { formatDateBR, calculateDailyCount, getTodaySaoPaulo, addDays } from '../lib/dateUtils';
 import { formatCurrencyBRL } from '../lib/currencyUtils';
@@ -109,19 +102,27 @@ export const ReservationsListView: React.FC = () => {
     return acc ? acc.nome : 'Chalé';
   };
 
-  const getStatusBadge = (status: ReservationStatus) => {
+  const getStatusStyle = (status: ReservationStatus) => {
     switch (status) {
       case 'Reservada':
-        return 'bg-amber-100 text-amber-950 border-amber-300';
+        return { pill: 'bg-amber-100 text-amber-800', dot: 'bg-amber-500' };
       case 'Hospedado':
-        return 'bg-emerald-100 text-emerald-950 border-emerald-300';
-      case 'Finalizada':
-        return 'bg-stone-100 text-stone-800 border-stone-300';
+        return { pill: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' };
       case 'Cancelada':
-        return 'bg-rose-100 text-rose-950 border-rose-300';
+        return { pill: 'bg-red-50 text-red-700', dot: 'bg-red-500' };
       default:
-        return 'bg-stone-100 text-stone-800 border-stone-300';
+        return { pill: 'bg-stone-100 text-stone-600', dot: 'bg-stone-400' };
     }
+  };
+
+  const StatusPill: React.FC<{ status: ReservationStatus }> = ({ status }) => {
+    const style = getStatusStyle(status);
+    return (
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${style.pill}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+        {status}
+      </span>
+    );
   };
 
   const clearFilters = () => {
@@ -139,228 +140,170 @@ export const ReservationsListView: React.FC = () => {
     accommodationFilter !== 'all' ||
     periodFilter !== 'all';
 
+  const selectCls =
+    'w-full rounded-full border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-800 outline-none transition focus:border-emerald-700 focus:ring-4 focus:ring-amber-300/40 cursor-pointer';
+
+  const STATUS_CHIPS: { value: string; label: string }[] = [
+    { value: 'all', label: 'Todas' },
+    { value: 'Reservada', label: 'Reservadas' },
+    { value: 'Hospedado', label: 'Hospedados' },
+    { value: 'Finalizada', label: 'Finalizadas' },
+    { value: 'Cancelada', label: 'Canceladas' },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* Top Header & Search Bar */}
-      <div className="bg-white p-5 sm:p-6 rounded-2xl border-2 border-stone-200 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-stone-900">Lista de Reservas</h1>
-            <p className="text-sm text-stone-600 mt-0.5">
-              Consulte e localize qualquer reserva cadastrada na pousada
-            </p>
-          </div>
-
-          <div className="text-xs font-bold text-stone-600 bg-stone-100 px-3.5 py-2 rounded-xl border border-stone-200">
-            Total de <strong className="text-stone-950 font-extrabold">{reservations.length}</strong> reservas
-          </div>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-4xl font-normal leading-none text-emerald-900 sm:text-5xl">Reservas</h1>
+          <p className="mt-2 text-sm text-stone-600">
+            {hasActiveFilters
+              ? `${filteredReservations.length} de ${reservations.length} reservas`
+              : `${reservations.length} ${reservations.length === 1 ? 'reserva cadastrada' : 'reservas cadastradas'}`}
+          </p>
         </div>
+        <button
+          onClick={() => openNewReservationModal()}
+          className="rounded-full bg-emerald-900 px-5 py-3 text-sm font-bold text-amber-300 transition hover:bg-emerald-700 active:scale-[0.98]"
+        >
+          Nova reserva
+        </button>
+      </div>
 
-        {/* Live Search Input - Big and visible */}
+      {/* Busca e filtros */}
+      <div className="space-y-3">
         <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           <input
-            type="text"
+            type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Digite o nome do hóspede, telefone ou placa..."
-            className="w-full px-4 py-3.5 pl-12 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-medium transition"
+            placeholder="Buscar por nome, telefone, documento ou placa"
+            aria-label="Buscar reservas"
+            className="w-full rounded-full border border-stone-300 bg-white py-3 pl-11 pr-11 text-[15px] text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-emerald-700 focus:ring-4 focus:ring-amber-300/40"
           />
-          <Search className="w-5 h-5 text-stone-500 absolute left-4 top-4" />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="p-1.5 text-stone-500 hover:text-stone-900 absolute right-4 top-3.5 cursor-pointer"
+              className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-stone-500 hover:bg-stone-100"
               title="Limpar busca"
+              aria-label="Limpar busca"
             >
-              <X className="w-5 h-5" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
 
-        {/* Filter Controls Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-sm">
-          {/* Status Filter */}
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">Situação</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2.5 bg-stone-50 border-2 border-stone-300 rounded-xl text-stone-900 text-sm font-semibold focus:bg-white cursor-pointer"
+        <div role="radiogroup" aria-label="Situação" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {STATUS_CHIPS.map((chip) => (
+            <button
+              key={chip.value}
+              type="button"
+              role="radio"
+              aria-checked={statusFilter === chip.value}
+              onClick={() => setStatusFilter(chip.value)}
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                statusFilter === chip.value
+                  ? 'border-emerald-900 bg-emerald-900 text-amber-300'
+                  : 'border-stone-300 bg-white text-stone-700 hover:border-emerald-500'
+              }`}
             >
-              <option value="all">Todas</option>
-              <option value="Reservada">Reservada</option>
-              <option value="Hospedado">Hospedado</option>
-              <option value="Finalizada">Finalizada</option>
-              <option value="Cancelada">Cancelada</option>
-            </select>
-          </div>
-
-          {/* Accommodation Filter */}
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">Chalé</label>
-            <select
-              value={accommodationFilter}
-              onChange={(e) => setAccommodationFilter(e.target.value)}
-              className="w-full px-3 py-2.5 bg-stone-50 border-2 border-stone-300 rounded-xl text-stone-900 text-sm font-semibold focus:bg-white truncate cursor-pointer"
-            >
-              <option value="all">Todos os Chalés</option>
-              {accommodations.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Period Filter */}
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">Período</label>
-            <select
-              value={periodFilter}
-              onChange={(e) => setPeriodFilter(e.target.value)}
-              className="w-full px-3 py-2.5 bg-stone-50 border-2 border-stone-300 rounded-xl text-stone-900 text-sm font-semibold focus:bg-white cursor-pointer"
-            >
-              <option value="all">Todo o Histórico</option>
-              <option value="today">Hoje</option>
-              <option value="next7">Próximos 7 Dias</option>
-              <option value="current_month">Este Mês</option>
-              <option value="custom">Escolher Datas...</option>
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1">Ordenar</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full px-3 py-2.5 bg-stone-50 border-2 border-stone-300 rounded-xl text-stone-900 text-sm font-semibold focus:bg-white cursor-pointer"
-            >
-              <option value="check_in_desc">Data (Mais Recentes)</option>
-              <option value="check_in_asc">Data (Mais Antigos)</option>
-              <option value="guest_name">Nome (A a Z)</option>
-              <option value="total_value">Maior Valor</option>
-            </select>
-          </div>
+              {chip.label}
+            </button>
+          ))}
         </div>
 
-        {/* Custom Period Dates */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <select aria-label="Chalé" value={accommodationFilter} onChange={(e) => setAccommodationFilter(e.target.value)} className={selectCls}>
+            <option value="all">Todos os chalés</option>
+            {accommodations.map((acc) => (
+              <option key={acc.id} value={acc.id}>{acc.nome}</option>
+            ))}
+          </select>
+          <select aria-label="Período" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} className={selectCls}>
+            <option value="all">Todo o histórico</option>
+            <option value="today">Hoje</option>
+            <option value="next7">Próximos 7 dias</option>
+            <option value="current_month">Este mês</option>
+            <option value="custom">Escolher datas</option>
+          </select>
+          <select aria-label="Ordenar" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className={selectCls}>
+            <option value="check_in_desc">Entrada: mais recentes</option>
+            <option value="check_in_asc">Entrada: mais antigas</option>
+            <option value="guest_name">Nome (A a Z)</option>
+            <option value="total_value">Maior valor</option>
+          </select>
+        </div>
+
         {periodFilter === 'custom' && (
-          <div className="p-4 bg-stone-50 rounded-xl border-2 border-stone-200 flex flex-wrap items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-stone-700">De:</span>
-              <input
-                type="date"
-                value={customCheckIn}
-                onChange={(e) => setCustomCheckIn(e.target.value)}
-                className="px-3 py-2 bg-white border-2 border-stone-300 rounded-xl text-sm font-semibold"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-stone-700">Até:</span>
-              <input
-                type="date"
-                value={customCheckOut}
-                onChange={(e) => setCustomCheckOut(e.target.value)}
-                className="px-3 py-2 bg-white border-2 border-stone-300 rounded-xl text-sm font-semibold"
-              />
-            </div>
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-3 text-sm ring-1 ring-stone-200">
+            <label className="flex items-center gap-2 font-semibold text-stone-600">
+              De
+              <input type="date" value={customCheckIn} onChange={(e) => setCustomCheckIn(e.target.value)} className="rounded-full border border-stone-300 px-3 py-2 font-medium text-stone-800" />
+            </label>
+            <label className="flex items-center gap-2 font-semibold text-stone-600">
+              Até
+              <input type="date" value={customCheckOut} onChange={(e) => setCustomCheckOut(e.target.value)} className="rounded-full border border-stone-300 px-3 py-2 font-medium text-stone-800" />
+            </label>
           </div>
         )}
 
-        {/* Filter Summary */}
-        <div className="flex items-center justify-between text-sm text-stone-600 pt-1 font-medium">
-          <span>
-            Mostrando <strong className="text-stone-900 font-extrabold">{filteredReservations.length}</strong> reservas
-          </span>
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-emerald-800 hover:text-emerald-950 font-bold underline cursor-pointer"
-            >
-              Limpar busca e filtros
-            </button>
-          )}
-        </div>
+        {hasActiveFilters && (
+          <button onClick={clearFilters} className="text-sm font-semibold text-emerald-700 underline underline-offset-2 hover:text-emerald-900">
+            Limpar busca e filtros
+          </button>
+        )}
       </div>
 
-      {/* Desktop Table View - Clean and High Contrast */}
-      <div className="hidden md:block bg-white rounded-2xl border-2 border-stone-200 shadow-xs overflow-hidden">
+      {/* Tabela (desktop) */}
+      <div className="hidden overflow-hidden rounded-3xl border border-stone-200 bg-white md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-stone-800">
-            <thead className="bg-stone-100 text-xs uppercase tracking-wider text-stone-700 border-b-2 border-stone-200 font-bold">
-              <tr>
-                <th className="py-3.5 px-4">Hóspede</th>
-                <th className="py-3.5 px-4">Chalé</th>
-                <th className="py-3.5 px-4">Entrada</th>
-                <th className="py-3.5 px-4">Saída</th>
-                <th className="py-3.5 px-4 text-center">Diárias</th>
-                <th className="py-3.5 px-4 text-right">Valor Total</th>
-                <th className="py-3.5 px-4">Canal</th>
-                <th className="py-3.5 px-4 text-right">Saldo</th>
-                <th className="py-3.5 px-4 text-center">Situação</th>
-                <th className="py-3.5 px-4 text-right">Ver</th>
+            <thead>
+              <tr className="border-b border-stone-200 bg-stone-50 text-xs font-semibold text-stone-500">
+                <th className="px-5 py-3.5">Hóspede</th>
+                <th className="px-4 py-3.5">Chalé</th>
+                <th className="px-4 py-3.5">Estadia</th>
+                <th className="px-4 py-3.5">Canal</th>
+                <th className="px-4 py-3.5 text-right">Total</th>
+                <th className="px-4 py-3.5 text-right">Falta receber</th>
+                <th className="px-4 py-3.5">Situação</th>
+                <th className="w-8 px-3 py-3.5"><span className="sr-only">Abrir</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-stone-100">
+            <tbody className="divide-y divide-stone-100">
               {filteredReservations.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-stone-500 text-base font-medium">
-                    Nenhuma reserva encontrada com os critérios informados.
+                  <td colSpan={8} className="py-14 text-center text-stone-500">
+                    {hasActiveFilters ? 'Nenhuma reserva com esses filtros.' : 'Nenhuma reserva cadastrada ainda.'}
                   </td>
                 </tr>
               ) : (
                 filteredReservations.map((res) => {
                   const dailyCount = calculateDailyCount(res.check_in, res.check_out);
-
+                  const outstanding = getOutstandingAmount(res);
                   return (
                     <tr
                       key={res.id}
                       onClick={() => openReservationDetails(res)}
-                      className="hover:bg-stone-50 transition cursor-pointer group"
+                      className="group cursor-pointer transition hover:bg-stone-50"
                     >
-                      <td className="py-4 px-4 font-bold text-stone-900 text-base">
-                        <div className="truncate max-w-[200px]">{res.guest_name}</div>
-                        {res.phone && (
-                          <div className="text-xs text-stone-500 font-normal">{res.phone}</div>
-                        )}
+                      <td className="px-5 py-4">
+                        <div className="max-w-[220px] truncate font-display text-[15px] font-bold text-emerald-900">{res.guest_name}</div>
+                        {res.phone && <div className="text-xs text-stone-500">{res.phone}</div>}
                       </td>
-                      <td className="py-4 px-4 font-semibold text-emerald-900">
-                        {getAccName(res.accommodation_id)}
+                      <td className="px-4 py-4 font-medium">{getAccName(res.accommodation_id)}</td>
+                      <td className="whitespace-nowrap px-4 py-4 tabular-nums">
+                        <div className="font-semibold">{formatDateBR(res.check_in)} a {formatDateBR(res.check_out)}</div>
+                        <div className="text-xs text-stone-500">{dailyCount} {dailyCount === 1 ? 'diária' : 'diárias'}</div>
                       </td>
-                      <td className="py-4 px-4 font-bold tabular-nums text-stone-900">
-                        {formatDateBR(res.check_in)}
+                      <td className="px-4 py-4 text-stone-600">{res.sales_channel || '—'}</td>
+                      <td className="px-4 py-4 text-right font-display font-bold tabular-nums text-emerald-900">{formatCurrencyBRL(res.total_value)}</td>
+                      <td className={`px-4 py-4 text-right font-semibold tabular-nums ${outstanding > 0 ? 'text-amber-700' : 'text-stone-400'}`}>
+                        {outstanding > 0 ? formatCurrencyBRL(outstanding) : 'Quitado'}
                       </td>
-                      <td className="py-4 px-4 font-bold tabular-nums text-stone-900">
-                        {formatDateBR(res.check_out)}
-                      </td>
-                      <td className="py-4 px-4 text-center tabular-nums font-bold text-stone-800">
-                        {dailyCount}
-                      </td>
-                      <td className="py-4 px-4 text-right font-extrabold text-stone-900 text-base tabular-nums">
-                        {formatCurrencyBRL(res.total_value)}
-                      </td>
-                      <td className="py-4 px-4 font-semibold text-stone-700">
-                        {res.sales_channel || '—'}
-                      </td>
-                      <td className="py-4 px-4 text-right font-bold text-amber-800 tabular-nums">
-                        {formatCurrencyBRL(getOutstandingAmount(res))}
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-xl text-xs font-bold border-2 ${getStatusBadge(
-                            res.status
-                          )}`}
-                        >
-                          {res.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-right">
-                        <span className="text-emerald-800 group-hover:text-emerald-950 font-bold text-sm flex items-center justify-end gap-1">
-                          <span>Detalhes</span>
-                          <ChevronRight className="w-4 h-4 stroke-[2.5]" />
-                        </span>
-                      </td>
+                      <td className="px-4 py-4"><StatusPill status={res.status} /></td>
+                      <td className="px-3 py-4 text-stone-300 transition group-hover:text-emerald-700"><ChevronRight className="h-4 w-4" /></td>
                     </tr>
                   );
                 })
@@ -370,67 +313,43 @@ export const ReservationsListView: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Responsive Cards View */}
-      <div className="md:hidden space-y-3">
+      {/* Cartões (celular) */}
+      <div className="space-y-3 md:hidden">
         {filteredReservations.length === 0 ? (
-          <div className="bg-white p-8 rounded-2xl border-2 border-stone-200 text-center text-stone-500 font-medium">
-            Nenhuma reserva encontrada.
+          <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center text-stone-500">
+            {hasActiveFilters ? 'Nenhuma reserva com esses filtros.' : 'Nenhuma reserva cadastrada ainda.'}
           </div>
         ) : (
           filteredReservations.map((res) => {
             const dailyCount = calculateDailyCount(res.check_in, res.check_out);
-
+            const outstanding = getOutstandingAmount(res);
             return (
-              <div
+              <button
                 key={res.id}
+                type="button"
                 onClick={() => openReservationDetails(res)}
-                className="bg-white p-4.5 rounded-2xl border-2 border-stone-200 shadow-xs active:bg-stone-50 transition cursor-pointer"
+                className="block w-full rounded-3xl border border-stone-200 bg-white p-4 text-left transition active:bg-stone-50"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-extrabold text-stone-900 text-base">{res.guest_name}</h3>
-                    <p className="text-sm font-bold text-emerald-900 mt-0.5">
-                      {getAccName(res.accommodation_id)}
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate font-display text-base font-bold text-emerald-900">{res.guest_name}</h3>
+                    <p className="mt-0.5 text-sm text-stone-600">{getAccName(res.accommodation_id)}</p>
                   </div>
-                  <span
-                    className={`inline-block px-2.5 py-1 rounded-xl text-xs font-bold border-2 ${getStatusBadge(
-                      res.status
-                    )}`}
-                  >
-                    {res.status}
-                  </span>
+                  <StatusPill status={res.status} />
                 </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm bg-stone-50 p-3 rounded-xl border border-stone-200">
-                  <div>
-                    <span className="block text-xs font-bold text-stone-500">Período</span>
-                    <span className="font-bold text-stone-900 tabular-nums">
-                      {formatDateBR(res.check_in)} a {formatDateBR(res.check_out)}
-                    </span>
+                <div className="mt-3 flex items-end justify-between gap-3 border-t border-stone-100 pt-3">
+                  <div className="text-sm tabular-nums">
+                    <div className="font-semibold text-stone-800">{formatDateBR(res.check_in)} a {formatDateBR(res.check_out)}</div>
+                    <div className="text-xs text-stone-500">{dailyCount} {dailyCount === 1 ? 'diária' : 'diárias'} · {res.sales_channel || 'canal não informado'}</div>
                   </div>
                   <div className="text-right">
-                    <span className="block text-xs font-bold text-stone-500">{dailyCount} diárias</span>
-                    <span className="font-extrabold text-emerald-950 text-base tabular-nums">
-                      {formatCurrencyBRL(res.total_value)}
-                    </span>
+                    <div className="font-display text-lg font-bold tabular-nums text-emerald-900">{formatCurrencyBRL(res.total_value)}</div>
+                    <div className={`text-xs font-semibold tabular-nums ${outstanding > 0 ? 'text-amber-700' : 'text-stone-400'}`}>
+                      {outstanding > 0 ? `Falta ${formatCurrencyBRL(outstanding)}` : 'Quitado'}
+                    </div>
                   </div>
                 </div>
-
-                <div className="mt-2 flex items-center justify-between text-xs font-bold">
-                  <span className="text-stone-600">Canal: {res.sales_channel || 'Não informado'}</span>
-                  <span className="text-amber-800">
-                    Saldo: {formatCurrencyBRL(getOutstandingAmount(res))}
-                  </span>
-                </div>
-
-                {res.phone && (
-                  <div className="mt-2 text-xs font-medium text-stone-600 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-stone-400" />
-                    <span>{res.phone}</span>
-                  </div>
-                )}
-              </div>
+              </button>
             );
           })
         )}

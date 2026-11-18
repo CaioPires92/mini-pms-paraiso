@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, User, Bed, Phone, Mail, Car, Check, ChevronDown, Plus, Trash2, ArrowRight, Moon, AlertCircle } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { calculateDailyCount, formatDateBR, getTodaySaoPaulo, addDays } from '../lib/dateUtils';
@@ -214,13 +214,40 @@ export const ReservationModal: React.FC = () => {
     return checkAccommodationConflict(accommodationId, checkIn, checkOut, editingId);
   }, [accommodationId, checkIn, checkOut, status, checkAccommodationConflict, editingId]);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Esc fecha, Tab fica dentro do formulário e o foco volta ao botão que abriu.
   useEffect(() => {
     if (!modalReservation.isOpen) return;
+    const previouslyFocused = window.document.activeElement as HTMLElement | null;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeReservationModal();
+      if (event.key === 'Escape') {
+        closeReservationModal();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => el.offsetParent !== null);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = window.document.activeElement;
+      if (event.shiftKey && (active === first || !dialogRef.current.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !dialogRef.current.contains(active))) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      previouslyFocused?.focus?.();
+    };
   }, [modalReservation.isOpen, closeReservationModal]);
 
   if (!modalReservation.isOpen) return null;
@@ -343,7 +370,7 @@ export const ReservationModal: React.FC = () => {
   );
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={isEdit ? 'Editar reserva' : 'Nova reserva'} className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-emerald-950/60 backdrop-blur-sm sm:items-center sm:p-5">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={isEdit ? 'Editar reserva' : 'Nova reserva'} className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-emerald-950/60 backdrop-blur-sm sm:items-center sm:p-5">
       <div className="animate-fadeIn flex max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-[28px] bg-stone-50 shadow-2xl sm:max-h-[92vh] sm:rounded-[28px] md:flex-row">
         {/* Coluna do formulário */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
