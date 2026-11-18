@@ -19,7 +19,7 @@ const MainContent: React.FC = () => {
   if (loadError) return <div className="min-h-screen grid place-items-center bg-stone-50 p-5"><div className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 text-center"><h1 className="font-bold text-rose-900">Não foi possível abrir a pousada</h1><p className="mt-2 text-sm text-stone-600">{loadError}</p><button className="mt-5 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white" onClick={() => window.location.reload()}>Tentar novamente</button></div></div>;
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 font-sans text-stone-900 pb-24 lg:pb-10 overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-stone-50 font-sans text-stone-900 pb-28 lg:pb-10 overflow-x-hidden">
       <Navbar />
 
       {/* Floating Toast Notification */}
