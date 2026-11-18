@@ -31,9 +31,8 @@ export const AuthScreen: React.FC = () => {
           <span className="font-display text-xl font-extrabold">Pousada Paraíso</span>
         </div>
         <div className="relative max-w-md">
-          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-300">Recepção</p>
-          <h1 className="font-serif text-6xl font-normal leading-[1.02] tracking-tight">
-            Cada chalé, <em className="text-amber-300">cada hóspede</em>, num só lugar.
+                    <h1 className="font-serif text-6xl font-normal leading-[1.02] tracking-tight">
+            Todos os chalés e hóspedes da pousada, num só lugar.
           </h1>
         </div>
         <p className="relative text-sm text-stone-200/60">Mapa de reservas, chegadas e saídas do dia.</p>

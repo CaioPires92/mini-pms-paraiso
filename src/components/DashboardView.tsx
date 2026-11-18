@@ -97,7 +97,7 @@ export const DashboardView: React.FC = () => {
         <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl" />
         <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amber-300">
+            <p className="text-sm font-medium text-amber-300">
               Recepção · {settings.inn_name}
             </p>
             <h1 className="mt-3 font-serif text-4xl font-normal capitalize leading-[1.05] tracking-tight sm:text-6xl">
@@ -131,7 +131,7 @@ export const DashboardView: React.FC = () => {
               <div className="absolute inset-0 grid place-items-center text-center">
                 <div>
                   <div className="font-serif text-4xl leading-none tabular-nums">{occupancyPercentage}<span className="text-xl">%</span></div>
-                  <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-stone-200/60">ocupação</div>
+                  <div className="mt-1 text-xs font-medium text-stone-200/60">ocupação</div>
                 </div>
               </div>
             </div>
@@ -158,7 +158,7 @@ export const DashboardView: React.FC = () => {
           >
             <span className={`grid h-9 w-9 place-items-center rounded-full ${card.accent}`}>{card.icon}</span>
             <div className="mt-4 font-serif text-5xl leading-none text-emerald-900 tabular-nums sm:text-6xl">{card.value}</div>
-            <div className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-stone-500">{card.label}</div>
+            <div className="mt-2 text-sm font-semibold text-stone-600">{card.label}</div>
           </button>
         ))}
       </div>
@@ -166,15 +166,15 @@ export const DashboardView: React.FC = () => {
       {/* Financeiro */}
       <div className="grid grid-cols-1 overflow-hidden rounded-3xl border border-stone-200 bg-white sm:grid-cols-3 sm:divide-x sm:divide-stone-200">
         <div className="border-b border-stone-200 p-5 sm:border-b-0 sm:p-6">
-          <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-stone-500">Reservas ativas</span>
+          <span className="text-sm font-semibold text-stone-600">Reservas ativas</span>
           <div className="mt-1 font-display text-2xl font-extrabold text-emerald-900 tabular-nums">{formatCurrencyBRL(totalBooked)}</div>
         </div>
         <div className="border-b border-stone-200 p-5 sm:border-b-0 sm:p-6">
-          <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-600"><WalletCards className="h-3.5 w-3.5" />Já recebido</span>
+          <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700"><WalletCards className="h-3.5 w-3.5" />Já recebido</span>
           <div className="mt-1 font-display text-2xl font-extrabold text-emerald-700 tabular-nums">{formatCurrencyBRL(totalPaid)}</div>
         </div>
         <div className="p-5 sm:p-6">
-          <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">Falta receber</span>
+          <span className="text-sm font-semibold text-amber-700">Falta receber</span>
           <div className="mt-1 font-display text-2xl font-extrabold text-amber-700 tabular-nums">{formatCurrencyBRL(totalOutstanding)}</div>
         </div>
       </div>
@@ -234,7 +234,7 @@ export const DashboardView: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); updateReservation(res.id, { status: 'Hospedado' }); }}
                           className="rounded-full bg-emerald-900 px-4 py-2.5 text-xs font-bold text-amber-300 transition hover:bg-emerald-700 sm:text-sm"
                         >
-                          Fazer check-in
+                          Registrar check-in
                         </button>
                       )}
                     </div>
@@ -279,7 +279,7 @@ export const DashboardView: React.FC = () => {
                       onClick={(e) => { e.stopPropagation(); updateReservation(res.id, { status: 'Finalizada' }); }}
                       className="shrink-0 self-end rounded-full border border-emerald-900 px-4 py-2.5 text-xs font-bold text-emerald-900 transition hover:bg-emerald-900 hover:text-amber-300 sm:self-center sm:text-sm"
                     >
-                      Concluir check-out
+                      Registrar check-out
                     </button>
                   )}
                 </div>

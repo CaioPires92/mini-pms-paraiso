@@ -190,7 +190,7 @@ export const OccupancyMapView: React.FC = () => {
         </div>
 
         <div className="text-xs text-stone-500 font-bold block sm:hidden">
-          Arraste para o lado para ver o calendário →
+          Arraste para o lado para ver mais dias
         </div>
       </div>
 

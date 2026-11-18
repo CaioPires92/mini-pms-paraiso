@@ -31,7 +31,7 @@ export const Navbar: React.FC = () => {
             </span>
             <span className="min-w-0 leading-none">
               <span className="block truncate font-display text-lg font-extrabold tracking-tight">{innName}</span>
-              <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-300/90">
+              <span className="mt-1 block text-xs font-medium text-amber-300/90">
                 Recepção
               </span>
             </span>

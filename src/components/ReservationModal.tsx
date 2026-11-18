@@ -742,25 +742,24 @@ export const ReservationModal: React.FC = () => {
         <aside className="relative hidden w-[320px] shrink-0 flex-col justify-between overflow-hidden bg-emerald-900 p-7 text-stone-50 md:flex">
           <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-300/15 blur-3xl" />
           <div className="relative">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300">Resumo</p>
-            <h3 className="mt-3 min-h-[2.5rem] break-words font-serif text-3xl font-normal leading-tight">
+            <h3 className="min-h-[2.5rem] break-words font-serif text-3xl font-normal leading-tight">
               {guestName.trim() || <span className="text-stone-200/40">Nome do hóspede</span>}
             </h3>
 
             <dl className="mt-6 space-y-4 text-sm">
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Chalé</dt>
+                <dt className="text-xs font-medium text-stone-200/60">Chalé</dt>
                 <dd className="mt-0.5 font-semibold">{selectedAcc?.nome ?? '—'}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Período</dt>
+                <dt className="text-xs font-medium text-stone-200/60">Período</dt>
                 <dd className="mt-0.5 flex items-center gap-2 font-semibold">
                   {checkIn ? formatDateBR(checkIn) : '—'} <ArrowRight className="h-3.5 w-3.5 text-amber-300" /> {checkOut ? formatDateBR(checkOut) : '—'}
                   <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold text-amber-300">{dailyCount}n</span>
                 </dd>
               </div>
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Canal</dt>
+                <dt className="text-xs font-medium text-stone-200/60">Canal</dt>
                 <dd className="mt-0.5 font-semibold">{salesChannel}</dd>
               </div>
             </dl>
@@ -768,7 +767,7 @@ export const ReservationModal: React.FC = () => {
 
           <div className="relative mt-8">
             <div className="rounded-2xl bg-white/[0.07] p-4 ring-1 ring-white/10">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Valor total</p>
+              <p className="text-xs font-medium text-stone-200/60">Valor total</p>
               <p className="mt-1 font-serif text-5xl leading-none tabular-nums">{formatCurrencyBRL(totalValue)}</p>
               <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-amber-300 transition-all duration-500" style={{ width: `${paidPct}%` }} />
