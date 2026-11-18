@@ -1,11 +1,36 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, User, DollarSign, Bed, Phone, Mail, Car, CheckCircle2, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { X, User, Bed, Phone, Mail, Car, Check, ChevronDown, Plus, Trash2, ArrowRight, Moon, AlertCircle } from 'lucide-react';
 import { usePms } from '../context/PmsContext';
 import { calculateDailyCount, formatDateBR, getTodaySaoPaulo, addDays } from '../lib/dateUtils';
 import { formatCurrencyBRL, parseCurrencyInput } from '../lib/currencyUtils';
 import { ConflictAlert } from './ConflictAlert';
 import { PaymentMethod, PaymentType, ReservationPayment, ReservationStatus, SalesChannel } from '../types';
 import { getReservationPayments } from '../lib/paymentUtils';
+
+const inputCls =
+  'w-full rounded-xl border border-stone-300 bg-white px-3.5 py-3 text-[15px] font-medium text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-emerald-700 focus:ring-4 focus:ring-amber-300/40';
+const labelCls = 'mb-1.5 block text-xs font-bold text-stone-600';
+
+const Section: React.FC<{ title: string; hint?: string; aside?: React.ReactNode; id?: string; children: React.ReactNode }> = ({ title, hint, aside, id, children }) => (
+  <section id={id} className="scroll-mt-4 rounded-2xl border border-stone-200 bg-white p-4 sm:p-5">
+    <div className="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <h3 className="font-display text-base font-extrabold text-emerald-900">{title}</h3>
+        {hint && <p className="mt-0.5 text-xs text-stone-500">{hint}</p>}
+      </div>
+      {aside}
+    </div>
+    {children}
+  </section>
+);
+
+const CHANNELS: SalesChannel[] = ['WhatsApp', 'Site', 'Booking', 'Instagram', 'Telefone', 'Recepção'];
+const STATUSES: { value: ReservationStatus; label: string }[] = [
+  { value: 'Reservada', label: 'Reservada' },
+  { value: 'Hospedado', label: 'Hospedado' },
+  { value: 'Finalizada', label: 'Finalizada' },
+  { value: 'Cancelada', label: 'Cancelada' },
+];
 
 export const ReservationModal: React.FC = () => {
   const {
@@ -281,118 +306,134 @@ export const ReservationModal: React.FC = () => {
     closeReservationModal();
   };
 
+  const canSubmit =
+    !conflictResult.hasConflict &&
+    totalValue > 0 &&
+    !!guestName.trim() &&
+    !!accommodationId &&
+    availableAccommodations.length > 0;
+  const selectedAcc = accommodations.find((a) => a.id === accommodationId);
+  const paidPct = totalValue > 0 ? Math.min(100, Math.round((paidAmount / totalValue) * 100)) : 0;
+  const missing: string[] = [];
+  if (!guestName.trim()) missing.push('nome do hóspede');
+  if (!accommodationId || availableAccommodations.length === 0) missing.push('chalé livre');
+  if (totalValue <= 0) missing.push('valor total');
+
+  const submitLabel = isEdit ? 'Salvar alterações' : 'Concluir reserva';
+
+  const SubmitButton = ({ className = '' }: { className?: string }) => (
+    <button
+      type="submit"
+      form="reservation-form"
+      disabled={!canSubmit}
+      className={`flex items-center justify-center gap-2 rounded-full bg-amber-300 px-6 py-3.5 text-sm font-extrabold text-emerald-900 transition hover:bg-amber-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+    >
+      <Check className="h-5 w-5 stroke-[3]" />
+      {submitLabel}
+    </button>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-stone-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border-2 border-stone-300 overflow-hidden my-auto animate-fadeIn max-h-[94vh] flex flex-col">
-        {/* Header - Warm, clear and friendly */}
-        <div className="px-5 sm:px-6 py-4 sm:py-5 border-b-2 border-stone-200 flex items-center justify-between bg-stone-50 shrink-0">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-stone-900">
-              {isEdit ? 'Editar Reserva' : 'Cadastrar Nova Reserva'}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 mt-0.5">
-              Preencha os dados abaixo de forma simples e rápida
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={closeReservationModal}
-            className="p-2 sm:p-2.5 text-stone-500 hover:text-stone-900 hover:bg-stone-200 rounded-2xl transition cursor-pointer"
-            title="Fechar janela"
-          >
-            <X className="w-6 h-6 stroke-[2.5]" />
-          </button>
-        </div>
-
-        {/* Form Body - Large, easy to read fields */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 text-sm sm:text-base overflow-y-auto flex-1">
-          {formError && (
-            <div className="p-4 bg-red-50 border-2 border-red-300 text-red-900 font-semibold text-sm rounded-2xl">
-              {formError}
-            </div>
-          )}
-
-          {/* 1. Nome do Hóspede */}
-          <div>
-            <label className="block text-sm sm:text-base font-bold text-stone-900 mb-1.5">
-              1. Nome do Hóspede <span className="text-red-600">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                placeholder="Digite o nome (Ex: Carlos Eduardo)"
-                className="w-full px-4 py-3 pl-11 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-medium transition"
-                autoFocus
-                required
-              />
-              <User className="w-5 h-5 text-stone-500 absolute left-3.5 top-3.5" />
-            </div>
-          </div>
-
-          {/* 2. Datas de Check-in e Check-out */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-emerald-950/60 backdrop-blur-sm sm:items-center sm:p-5">
+      <div className="animate-fadeIn flex max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-[28px] bg-stone-50 shadow-2xl sm:max-h-[92vh] sm:rounded-[28px] md:flex-row">
+        {/* Coluna do formulário */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-200 px-5 py-4 sm:px-7">
             <div>
-              <label className="block text-sm sm:text-base font-bold text-stone-900 mb-1.5">
-                2. Data de Entrada <span className="text-red-600">*</span>
-              </label>
+              <h2 className="font-serif text-3xl font-normal leading-none text-emerald-900">
+                {isEdit ? 'Editar reserva' : 'Nova reserva'}
+              </h2>
+              <p className="mt-1 text-xs text-stone-500">Os campos com * são obrigatórios.</p>
+            </div>
+            <button
+              type="button"
+              onClick={closeReservationModal}
+              className="grid h-10 w-10 place-items-center rounded-full text-stone-500 transition hover:bg-stone-200 hover:text-stone-900"
+              title="Fechar"
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+
+          <form id="reservation-form" onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-7">
+            {formError && (
+              <div role="alert" className="flex items-start gap-2.5 rounded-2xl border border-red-300 bg-red-50 p-3.5 text-sm font-semibold text-red-900">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                {formError}
+              </div>
+            )}
+
+            {/* Hóspede */}
+            <Section title="Hóspede">
+              <label className={labelCls} htmlFor="guest-name">Nome completo *</label>
               <div className="relative">
+                <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
                 <input
-                  type="date"
-                  value={checkIn}
-                  onClick={(e) => e.currentTarget.showPicker?.()}
-                  onChange={(e) => {
-                    const newCheckIn = e.target.value;
-                    setCheckIn(newCheckIn);
-                    if (newCheckIn >= checkOut) {
-                      setCheckOut(addDays(newCheckIn, 1));
-                    }
-                  }}
-                  className="w-full min-h-16 px-4 py-4 pl-13 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-lg sm:text-xl font-bold transition cursor-pointer"
+                  id="guest-name"
+                  type="text"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="Ex.: Carlos Eduardo"
+                  className={`${inputCls} pl-10`}
+                  autoFocus
                   required
                 />
-                <Calendar className="w-6 h-6 text-emerald-800 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
-            </div>
+            </Section>
 
-            <div>
-              <label className="block text-sm sm:text-base font-bold text-stone-900 mb-1.5">
-                Data de Saída <span className="text-red-600">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={checkOut}
-                  min={addDays(checkIn, 1)}
-                  onClick={(e) => e.currentTarget.showPicker?.()}
-                  onChange={(e) => setCheckOut(e.target.value)}
-                  className="w-full min-h-16 px-4 py-4 pl-13 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-lg sm:text-xl font-bold transition cursor-pointer"
-                  required
-                />
-                <Calendar className="w-6 h-6 text-emerald-800 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            {/* Estadia */}
+            <Section
+              title="Estadia"
+              hint="Escolha as datas e depois o chalé livre."
+              aside={
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                  <Moon className="h-3.5 w-3.5" />
+                  {dailyCount} {dailyCount === 1 ? 'noite' : 'noites'}
+                </span>
+              }
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls} htmlFor="check-in">Entrada *</label>
+                  <input
+                    id="check-in"
+                    type="date"
+                    value={checkIn}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    onChange={(e) => {
+                      const newCheckIn = e.target.value;
+                      setCheckIn(newCheckIn);
+                      if (newCheckIn >= checkOut) setCheckOut(addDays(newCheckIn, 1));
+                    }}
+                    className={`${inputCls} cursor-pointer font-bold`}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="check-out">Saída *</label>
+                  <input
+                    id="check-out"
+                    type="date"
+                    value={checkOut}
+                    min={addDays(checkIn, 1)}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    className={`${inputCls} cursor-pointer font-bold`}
+                    required
+                  />
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* 3. Acomodação */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm sm:text-base font-bold text-stone-900">
-                3. Escolha o Chalé <span className="text-red-600">*</span>
-              </label>
-              <span className="text-xs sm:text-sm font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
-                {availableAccommodations.length} de {activeAccommodations.length} livres
-              </span>
-            </div>
+              <div className="mb-2 mt-5 flex items-center justify-between">
+                <span className={`${labelCls} mb-0`}>Chalé *</span>
+                <span className="text-xs font-bold text-emerald-700">
+                  {availableAccommodations.length} de {activeAccommodations.length} livres
+                </span>
+              </div>
 
-            <div>
               {activeAccommodations.length > 0 ? (
-                <div
-                  role="radiogroup"
-                  aria-label="Escolha o chalé"
-                  className="max-h-80 overflow-y-auto rounded-2xl border-2 border-stone-300 bg-stone-50 p-2.5 space-y-2"
-                >
+                <div role="radiogroup" aria-label="Escolha o chalé" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {activeAccommodations.map((acc) => {
                     const isAvailable = availableAccommodationIds.has(acc.id);
                     const isSelected = accommodationId === acc.id;
@@ -407,24 +448,14 @@ export const ReservationModal: React.FC = () => {
                           role="radio"
                           aria-checked={isSelected}
                           aria-disabled="true"
-                          className={`w-full p-3.5 rounded-xl border-2 text-left flex items-center gap-3 ${
-                            isSelected
-                              ? 'bg-red-50 border-red-500 ring-2 ring-red-200'
-                              : 'bg-red-50/70 border-red-200'
-                          }`}
+                          className="flex items-center gap-3 rounded-xl border border-dashed border-stone-300 bg-stone-100/70 p-3 opacity-80"
                         >
-                          <Bed className="w-6 h-6 shrink-0 text-red-500" />
+                          <Bed className="h-5 w-5 shrink-0 text-stone-400" />
                           <span className="min-w-0 flex-1">
-                            <span className="block text-base font-extrabold text-stone-800">{acc.nome}</span>
-                            <span className="block mt-0.5 text-sm font-medium text-stone-600">{acc.tipo}</span>
-                            {conflict && (
-                              <span className="block mt-1 text-xs font-bold text-red-700">
-                                Reservado de {formatDateBR(conflict.check_in)} a {formatDateBR(conflict.check_out)}
-                              </span>
-                            )}
-                          </span>
-                          <span className="shrink-0 rounded-lg bg-red-100 px-2 py-1 text-xs font-black text-red-700">
-                            Ocupado
+                            <span className="block truncate text-sm font-bold text-stone-600">{acc.nome}</span>
+                            <span className="block text-xs text-red-700">
+                              {conflict ? `Ocupado ${formatDateBR(conflict.check_in)} a ${formatDateBR(conflict.check_out)}` : 'Ocupado'}
+                            </span>
                           </span>
                         </div>
                       );
@@ -437,328 +468,320 @@ export const ReservationModal: React.FC = () => {
                         role="radio"
                         aria-checked={isSelected}
                         onClick={() => setAccommodationId(acc.id)}
-                        className={`w-full p-3.5 rounded-xl border-2 text-left transition flex items-center gap-3 cursor-pointer ${
+                        className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
                           isSelected
-                            ? 'bg-emerald-50 border-emerald-700 ring-2 ring-emerald-200'
-                            : 'bg-white border-stone-200 hover:border-emerald-400 hover:bg-emerald-50/50'
+                            ? 'border-emerald-900 bg-emerald-900 text-stone-50 shadow-md'
+                            : 'border-stone-200 bg-white hover:border-emerald-500'
                         }`}
                       >
-                        <CheckCircle2 className={`w-6 h-6 shrink-0 ${isSelected ? 'text-emerald-700' : 'text-emerald-500'}`} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-base font-extrabold text-stone-950">{acc.nome}</span>
-                          <span className="block mt-0.5 text-sm font-medium text-stone-600">{acc.tipo}</span>
+                        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${isSelected ? 'bg-amber-300 text-emerald-900' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {isSelected ? <Check className="h-4 w-4 stroke-[3]" /> : <Bed className="h-4 w-4" />}
                         </span>
-                        <span className="shrink-0 rounded-lg bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-800">
-                          Livre
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold">{acc.nome}</span>
+                          <span className={`block truncate text-xs ${isSelected ? 'text-stone-200/70' : 'text-stone-500'}`}>{acc.tipo} · Livre</span>
                         </span>
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <div className="w-full px-4 py-3.5 text-stone-500 bg-stone-100 border-2 border-stone-300 rounded-2xl text-sm sm:text-base italic flex items-center gap-3">
-                  <Bed className="w-5 h-5 text-stone-400 shrink-0" />
-                  <span>Nenhum chalé ativo cadastrado</span>
+                <div className="flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-100 px-4 py-3 text-sm italic text-stone-500">
+                  <Bed className="h-4 w-4 shrink-0" /> Nenhum chalé ativo cadastrado
                 </div>
               )}
-            </div>
 
-            {availableAccommodations.length === 0 && (
-              <p className="mt-2 text-xs sm:text-sm text-amber-900 bg-amber-50 border-2 border-amber-300 p-3 rounded-xl font-medium">
-                Todos os chalés já estão reservados entre <strong>{formatDateBR(checkIn)}</strong> e <strong>{formatDateBR(checkOut)}</strong>. Por favor, escolha outra data acima.
+              {availableAccommodations.length === 0 && (
+                <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-medium text-amber-900">
+                  Todos os chalés estão reservados entre <strong>{formatDateBR(checkIn)}</strong> e <strong>{formatDateBR(checkOut)}</strong>. Mude as datas acima.
+                </p>
+              )}
+              {conflictResult.hasConflict && (
+                <div className="mt-3">
+                  <ConflictAlert conflictingReservation={conflictResult.conflictingReservation} />
+                </div>
+              )}
+            </Section>
+
+            {/* Valor e origem */}
+            <Section title="Valor e origem">
+              <label className={labelCls} htmlFor="total-value">Valor total da reserva *</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-stone-400">R$</span>
+                <input
+                  id="total-value"
+                  type="text"
+                  inputMode="decimal"
+                  value={totalValueInput}
+                  onChange={(e) => setTotalValueInput(e.target.value)}
+                  placeholder="1500,00"
+                  className={`${inputCls} pl-10 font-display text-xl font-bold tabular-nums`}
+                  required
+                />
+              </div>
+              <p className="mt-1.5 text-xs text-stone-500">
+                {dailyCount > 0 && totalValue > 0
+                  ? `Média de ${formatCurrencyBRL(averageDaily)} por noite.`
+                  : 'Informe o total para ver a média por noite.'}
               </p>
-            )}
-          </div>
 
-          {/* Conflict Alert if any */}
-          {conflictResult.hasConflict && (
-            <ConflictAlert conflictingReservation={conflictResult.conflictingReservation} />
-          )}
-
-          {/* 4. Valor Total e Cálculos Automáticos */}
-          <div>
-            <label className="block text-sm sm:text-base font-bold text-stone-900 mb-1.5">
-              4. Valor Total da Reserva (R$) <span className="text-red-600">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={totalValueInput}
-                onChange={(e) => setTotalValueInput(e.target.value)}
-                placeholder="Ex: 1500,00"
-                className="w-full px-4 py-3 pl-11 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-lg font-bold transition"
-                required
-              />
-              <DollarSign className="w-5 h-5 text-stone-500 absolute left-3.5 top-3.5" />
-            </div>
-
-            {/* Painel Grande de Cálculos Automáticos (Diárias e Média) */}
-            <div className="mt-3 p-3 sm:p-3.5 bg-emerald-50/90 rounded-2xl border-2 border-emerald-200 flex items-center justify-between gap-2 overflow-hidden">
-              <div className="min-w-0">
-                <span className="block text-[10px] sm:text-[11px] font-bold text-emerald-800 uppercase tracking-wider truncate">Valor Total</span>
-                <span className="text-lg sm:text-2xl font-black text-emerald-950 tabular-nums truncate block">
-                  {formatCurrencyBRL(totalValue)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-2.5 bg-white/95 border border-emerald-200/90 rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 shrink-0 shadow-2xs">
-                <div className="text-center sm:text-left">
-                  <span className="block text-[9px] sm:text-[10px] font-bold text-stone-500 uppercase tracking-wide">Diárias</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-stone-900 tabular-nums">
-                    {dailyCount} {dailyCount === 1 ? 'dia' : 'dias'}
-                  </span>
-                </div>
-                <div className="h-6 w-px bg-emerald-200" />
-                <div className="text-center sm:text-left">
-                  <span className="block text-[9px] sm:text-[10px] font-bold text-stone-500 uppercase tracking-wide">Média/Dia</span>
-                  <span className="text-xs sm:text-sm font-extrabold text-emerald-900 tabular-nums">
-                    {dailyCount > 0 && totalValue > 0 ? formatCurrencyBRL(averageDaily) : '—'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Canal de venda */}
-          <div>
-            <label className="block text-sm sm:text-base font-bold text-stone-900 mb-1.5">
-              5. Canal de Venda <span className="text-red-600">*</span>
-            </label>
-            <select
-              value={salesChannel}
-              onChange={(e) => setSalesChannel(e.target.value as SalesChannel)}
-              className="w-full px-4 py-3 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-base font-bold"
-            >
-              {(['WhatsApp', 'Site', 'Booking', 'Instagram', 'Telefone', 'Recepção'] as SalesChannel[]).map((channel) => (
-                <option key={channel} value={channel}>{channel}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Controle de pagamentos */}
-          <div id="payments-section" className="space-y-3 rounded-2xl border-2 border-emerald-300 bg-emerald-50/40 p-3 sm:p-4 scroll-mt-4">
-            <div>
-              <h3 className="text-base sm:text-lg font-extrabold text-emerald-950">Pagamentos recebidos</h3>
-              <p className="text-xs text-stone-500">Adicione o sinal e quantas parcelas forem necessárias.</p>
-            </div>
-
-            {payments.length > 0 && (
-              <div className="space-y-2">
-                {payments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 p-3">
-                    <div className="min-w-0">
-                      <div className="font-bold text-stone-900">{payment.type} · {payment.method}</div>
-                      <div className="text-xs text-stone-500">{formatDateBR(payment.paid_at)}{payment.note ? ` · ${payment.note}` : ''}</div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <strong className="text-emerald-800 tabular-nums">{formatCurrencyBRL(payment.amount)}</strong>
-                      <button type="button" onClick={() => removePayment(payment.id)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50" aria-label="Excluir pagamento" title="Excluir pagamento">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+              <span className={`${labelCls} mt-5`}>Canal de venda *</span>
+              <div role="radiogroup" aria-label="Canal de venda" className="flex flex-wrap gap-2">
+                {CHANNELS.map((channel) => (
+                  <button
+                    key={channel}
+                    type="button"
+                    role="radio"
+                    aria-checked={salesChannel === channel}
+                    onClick={() => setSalesChannel(channel)}
+                    className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      salesChannel === channel
+                        ? 'border-emerald-900 bg-emerald-900 text-amber-300'
+                        : 'border-stone-300 bg-white text-stone-700 hover:border-emerald-500'
+                    }`}
+                  >
+                    {channel}
+                  </button>
                 ))}
               </div>
+            </Section>
+
+            {/* Pagamentos */}
+            <Section
+              id="payments-section"
+              title="Pagamentos recebidos"
+              hint="Sinal e parcelas. Pode deixar vazio e lançar depois."
+              aside={
+                !showPaymentForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentForm(true)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-900 px-3.5 py-1.5 text-xs font-bold text-emerald-900 transition hover:bg-emerald-900 hover:text-amber-300"
+                  >
+                    <Plus className="h-3.5 w-3.5 stroke-[3]" /> Adicionar
+                  </button>
+                )
+              }
+            >
+              {payments.length === 0 && !showPaymentForm && (
+                <p className="rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-500">Nenhum pagamento lançado.</p>
+              )}
+
+              {payments.length > 0 && (
+                <ul className="divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200">
+                  {payments.map((payment) => (
+                    <li key={payment.id} className="flex items-center justify-between gap-3 bg-white px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-stone-900">{payment.type} · {payment.method}</div>
+                        <div className="text-xs text-stone-500">{formatDateBR(payment.paid_at)}{payment.note ? ` · ${payment.note}` : ''}</div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <strong className="font-display tabular-nums text-emerald-700">{formatCurrencyBRL(payment.amount)}</strong>
+                        <button type="button" onClick={() => removePayment(payment.id)} className="rounded-full p-2 text-stone-400 transition hover:bg-red-50 hover:text-red-600" aria-label="Excluir pagamento" title="Excluir pagamento">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {showPaymentForm && (
+                <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="col-span-2 sm:col-span-1">
+                      <span className={labelCls}>Valor recebido</span>
+                      <input type="text" inputMode="decimal" value={paymentAmountInput} onChange={(e) => setPaymentAmountInput(e.target.value)} placeholder="R$ 0,00" className={`${inputCls} font-bold`} />
+                    </label>
+                    <label className="col-span-2 sm:col-span-1">
+                      <span className={labelCls}>Forma</span>
+                      <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} className={inputCls}>
+                        <option value="Pix">Pix</option>
+                        <option value="Cartão de crédito">Cartão de crédito</option>
+                        <option value="Cartão de débito">Cartão de débito</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span className={labelCls}>Tipo</span>
+                      <select value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)} className={inputCls}>
+                        <option value="Pagamento">Pagamento</option>
+                        <option value="Sinal">Sinal</option>
+                        <option value="Parcela">Parcela</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span className={labelCls}>Data</span>
+                      <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className={inputCls} />
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className={labelCls}>Observação (opcional)</span>
+                    <input type="text" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} placeholder="Ex.: parcela 1/3" className={inputCls} />
+                  </label>
+                  <div className="flex items-center justify-end gap-2">
+                    <button type="button" onClick={() => setShowPaymentForm(false)} className="rounded-full px-4 py-2.5 text-sm font-bold text-stone-600 transition hover:bg-white">
+                      Cancelar
+                    </button>
+                    <button type="button" onClick={addPayment} className="flex items-center gap-1.5 rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-bold text-amber-300 transition hover:bg-emerald-700">
+                      <Plus className="h-4 w-4 stroke-[3]" /> Lançar pagamento
+                    </button>
+                  </div>
+                </div>
+              )}
+            </Section>
+
+            {/* Situação (somente edição) */}
+            {isEdit && (
+              <Section title="Situação da reserva">
+                <div role="radiogroup" aria-label="Situação da reserva" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {STATUSES.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={status === option.value}
+                      onClick={() => setStatus(option.value)}
+                      className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                        status === option.value
+                          ? option.value === 'Cancelada'
+                            ? 'border-red-700 bg-red-700 text-white'
+                            : 'border-emerald-900 bg-emerald-900 text-amber-300'
+                          : 'border-stone-300 bg-white text-stone-700 hover:border-emerald-500'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </Section>
             )}
 
-            {!showPaymentForm ? (
+            {/* Contato e observações */}
+            <section className="rounded-2xl border border-stone-200 bg-white">
               <button
                 type="button"
-                onClick={() => setShowPaymentForm(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-700 bg-white px-4 py-3 font-extrabold text-emerald-800 transition hover:bg-emerald-50"
+                onClick={() => setShowOptionalFields(!showOptionalFields)}
+                aria-expanded={showOptionalFields}
+                className="flex w-full items-center justify-between gap-3 p-4 text-left sm:px-5"
               >
-                <Plus className="h-5 w-5" /> Adicionar pagamento
+                <span>
+                  <span className="block font-display text-base font-extrabold text-emerald-900">Contato e observações</span>
+                  <span className="block text-xs text-stone-500">Telefone, documento, e-mail, placa e pedidos. Opcional.</span>
+                </span>
+                <ChevronDown className={`h-5 w-5 shrink-0 text-stone-500 transition-transform ${showOptionalFields ? 'rotate-180' : ''}`} />
               </button>
-            ) : (
-            <div className="rounded-2xl border border-emerald-200 bg-white p-4 space-y-4 shadow-xs">
-              <div className="flex items-center justify-between gap-3">
-                <strong className="text-sm text-stone-900">Novo pagamento</strong>
-                <button type="button" onClick={() => setShowPaymentForm(false)} className="rounded-lg p-1.5 text-stone-500 hover:bg-stone-100" aria-label="Fechar formulário de pagamento" title="Fechar">
-                  <X className="h-4 w-4" />
-                </button>
+
+              {showOptionalFields && (
+                <div className="space-y-4 border-t border-stone-100 p-4 sm:p-5">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label>
+                      <span className={labelCls}>Telefone / WhatsApp</span>
+                      <div className="relative">
+                        <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                        <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" className={`${inputCls} pl-10`} />
+                      </div>
+                    </label>
+                    <label>
+                      <span className={labelCls}>CPF ou RG</span>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                        <input type="text" value={document} onChange={(e) => setDocument(e.target.value)} placeholder="000.000.000-00" className={`${inputCls} pl-10`} />
+                      </div>
+                    </label>
+                    <label>
+                      <span className={labelCls}>E-mail</span>
+                      <div className="relative">
+                        <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hospede@email.com" className={`${inputCls} pl-10`} />
+                      </div>
+                    </label>
+                    <label>
+                      <span className={labelCls}>Placa do veículo</span>
+                      <div className="relative">
+                        <Car className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                        <input type="text" value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())} placeholder="ABC-1234" className={`${inputCls} pl-10 uppercase`} />
+                      </div>
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className={labelCls}>Observações e pedidos</span>
+                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="Ex.: cama extra, horário previsto de chegada..." className={inputCls} />
+                  </label>
+                </div>
+              )}
+            </section>
+          </form>
+
+          {/* Barra de ação no celular */}
+          <div className="shrink-0 border-t border-stone-200 bg-white p-3 md:hidden">
+            <div className="mb-2 flex items-center justify-between px-1 text-sm">
+              <span className="text-stone-500">{dailyCount} {dailyCount === 1 ? 'noite' : 'noites'} · {selectedAcc?.nome ?? 'sem chalé'}</span>
+              <strong className="font-display text-lg tabular-nums text-emerald-900">{formatCurrencyBRL(totalValue)}</strong>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={closeReservationModal} className="rounded-full px-5 py-3.5 text-sm font-bold text-stone-600 hover:bg-stone-100">
+                Cancelar
+              </button>
+              <SubmitButton className="flex-1 !bg-emerald-900 !text-amber-300" />
+            </div>
+          </div>
+        </div>
+
+        {/* Painel de resumo (desktop) */}
+        <aside className="relative hidden w-[320px] shrink-0 flex-col justify-between overflow-hidden bg-emerald-900 p-7 text-stone-50 md:flex">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-300/15 blur-3xl" />
+          <div className="relative">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300">Resumo</p>
+            <h3 className="mt-3 min-h-[2.5rem] break-words font-serif text-3xl font-normal leading-tight">
+              {guestName.trim() || <span className="text-stone-200/40">Nome do hóspede</span>}
+            </h3>
+
+            <dl className="mt-6 space-y-4 text-sm">
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Chalé</dt>
+                <dd className="mt-0.5 font-semibold">{selectedAcc?.nome ?? '—'}</dd>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="min-w-0 text-xs font-bold text-stone-700">
-                  Tipo do pagamento
-                  <select value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900">
-                    <option value="Pagamento">Pagamento</option>
-                    <option value="Sinal">Sinal</option>
-                    <option value="Parcela">Parcela</option>
-                    <option value="Outro">Outro</option>
-                  </select>
-                </label>
-                <label className="min-w-0 text-xs font-bold text-stone-700">
-                  Forma de pagamento
-                  <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900">
-                    <option value="Pix">Pix</option>
-                    <option value="Cartão de crédito">Cartão de crédito</option>
-                    <option value="Cartão de débito">Cartão de débito</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                  </select>
-                </label>
-                <label className="min-w-0 text-xs font-bold text-stone-700">
-                  Data do pagamento
-                  <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-semibold text-stone-900" />
-                </label>
-                <label className="min-w-0 text-xs font-bold text-stone-700">
-                  Valor recebido
-                  <input type="text" inputMode="decimal" value={paymentAmountInput} onChange={(e) => setPaymentAmountInput(e.target.value)} placeholder="R$ 0,00" className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-bold text-stone-900" />
-                </label>
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Período</dt>
+                <dd className="mt-0.5 flex items-center gap-2 font-semibold">
+                  {checkIn ? formatDateBR(checkIn) : '—'} <ArrowRight className="h-3.5 w-3.5 text-amber-300" /> {checkOut ? formatDateBR(checkOut) : '—'}
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold text-amber-300">{dailyCount}n</span>
+                </dd>
               </div>
-              <label className="block text-xs font-bold text-stone-700">
-                Observação (opcional)
-                <input type="text" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)} placeholder="Ex.: parcela 1/3" className="mt-1.5 w-full rounded-xl border-2 border-stone-300 bg-stone-50 px-3 py-3 text-sm font-medium text-stone-900" />
-              </label>
-              <button type="button" onClick={addPayment} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3 font-extrabold text-white transition hover:bg-emerald-900">
-                <Plus className="h-5 w-5" /> Adicionar pagamento
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Canal</dt>
+                <dd className="mt-0.5 font-semibold">{salesChannel}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="relative mt-8">
+            <div className="rounded-2xl bg-white/[0.07] p-4 ring-1 ring-white/10">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-200/50">Valor total</p>
+              <p className="mt-1 font-serif text-5xl leading-none tabular-nums">{formatCurrencyBRL(totalValue)}</p>
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-amber-300 transition-all duration-500" style={{ width: `${paidPct}%` }} />
+              </div>
+              <div className="mt-2 flex justify-between text-xs">
+                <span className="text-stone-200/70">Recebido <strong className="text-stone-50">{formatCurrencyBRL(paidAmount)}</strong></span>
+                <span className="text-stone-200/70">Falta <strong className={remainingAmount > 0 ? 'text-amber-300' : 'text-emerald-300'}>{formatCurrencyBRL(remainingAmount)}</strong></span>
+              </div>
+            </div>
+
+            {!canSubmit && missing.length > 0 && (
+              <p className="mt-3 text-xs text-stone-200/60">Falta preencher: {missing.join(', ')}.</p>
+            )}
+
+            <div className="mt-4 flex flex-col gap-2">
+              <SubmitButton />
+              <button type="button" onClick={closeReservationModal} className="rounded-full px-6 py-3 text-sm font-bold text-stone-200/70 transition hover:bg-white/10 hover:text-white">
+                Cancelar
               </button>
             </div>
-            )}
-            <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-stone-200 bg-stone-50 p-3">
-              <div>
-                <span className="block text-[10px] font-bold uppercase text-stone-500">Total pago</span>
-                <strong className="text-emerald-800 tabular-nums">{formatCurrencyBRL(paidAmount)}</strong>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold uppercase text-stone-500">Falta receber</span>
-                <strong className={remainingAmount > 0 ? 'text-amber-800 tabular-nums' : 'text-emerald-800 tabular-nums'}>
-                  {formatCurrencyBRL(remainingAmount)}
-                </strong>
-              </div>
-            </div>
           </div>
-
-          {/* Status (when editing) */}
-          {isEdit && (
-            <div>
-              <label className="block text-sm font-bold text-stone-900 mb-1.5">
-                Situação da Reserva
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as ReservationStatus)}
-                className="w-full px-4 py-3 text-stone-900 bg-stone-50 border-2 border-stone-300 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-700 text-sm sm:text-base font-bold"
-              >
-                <option value="Reservada">Reservada</option>
-                <option value="Hospedado">Hospedado (Hóspede já chegou)</option>
-                <option value="Finalizada">Finalizada (Hóspede já saiu)</option>
-                <option value="Cancelada">Cancelada</option>
-              </select>
-            </div>
-          )}
-
-          {/* Botão para abrir dados opcionais (Telefone, Documento, etc.) */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => setShowOptionalFields(!showOptionalFields)}
-              className="flex items-center justify-between w-full py-3 px-4 bg-stone-100 hover:bg-stone-200/80 rounded-2xl text-sm font-bold text-stone-800 border border-stone-300 transition cursor-pointer"
-            >
-              <span>{showOptionalFields ? '▲ Ocultar dados adicionais' : '▼ Preencher telefone, documento ou placa (opcional)'}</span>
-              {showOptionalFields ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-            </button>
-
-            {showOptionalFields && (
-              <div className="space-y-4 pt-3 text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">Telefone / WhatsApp</label>
-                    <div className="relative">
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="(00) 00000-0000"
-                        className="w-full px-4 py-2.5 pl-10 bg-stone-50 border-2 border-stone-300 rounded-xl focus:bg-white text-sm font-medium"
-                      />
-                      <Phone className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">CPF ou RG</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={document}
-                        onChange={(e) => setDocument(e.target.value)}
-                        placeholder="000.000.000-00"
-                        className="w-full px-4 py-2.5 pl-10 bg-stone-50 border-2 border-stone-300 rounded-xl focus:bg-white text-sm font-medium"
-                      />
-                      <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">E-mail do Hóspede</label>
-                    <div className="relative">
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="hospede@email.com"
-                        className="w-full px-4 py-2.5 pl-10 bg-stone-50 border-2 border-stone-300 rounded-xl focus:bg-white text-sm font-medium"
-                      />
-                      <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">Placa do Veículo</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={vehiclePlate}
-                        onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                        placeholder="ABC-1234"
-                        className="w-full px-4 py-2.5 pl-10 bg-stone-50 border-2 border-stone-300 rounded-xl focus:bg-white text-sm font-medium uppercase"
-                      />
-                      <Car className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">Observações e Pedidos</label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={2}
-                    placeholder="Ex: Cama extra de casal, horário previsto de chegada..."
-                    className="w-full px-4 py-2.5 bg-stone-50 border-2 border-stone-300 rounded-xl focus:bg-white text-sm font-medium"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Botões de Ação - Grandes e Fáceis */}
-          <div className="pt-4 border-t-2 border-stone-200 flex flex-col sm:flex-row items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={closeReservationModal}
-              className="w-full sm:w-auto px-6 py-3 text-sm sm:text-base font-bold text-stone-700 hover:text-stone-900 hover:bg-stone-100 rounded-2xl transition cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={
-                conflictResult.hasConflict ||
-                totalValue <= 0 ||
-                !guestName.trim() ||
-                !accommodationId ||
-                availableAccommodations.length === 0
-              }
-              className="w-full sm:w-auto px-8 py-3.5 text-base sm:text-lg font-extrabold text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed rounded-2xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
-              <span>{isEdit ? 'Salvar Alterações' : 'Concluir Reserva'}</span>
-            </button>
-          </div>
-        </form>
+        </aside>
       </div>
     </div>
   );

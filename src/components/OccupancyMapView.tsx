@@ -106,14 +106,14 @@ export const OccupancyMapView: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Top Controls Bar - Minimalist, large buttons easy for seniors to use */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border-2 border-stone-300 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Navigation & Date Picker */}
-        <div className="flex items-center flex-wrap gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Previous / Today / Next */}
-          <div className="flex items-center bg-stone-100 rounded-2xl p-1.5 border-2 border-stone-300 shadow-2xs">
+          <div className="flex items-center rounded-full bg-white p-1 ring-1 ring-stone-200">
             <button
               onClick={handlePrev}
-              className="px-3.5 py-2.5 text-stone-900 hover:bg-white rounded-xl transition font-extrabold text-sm flex items-center gap-1 cursor-pointer active:scale-95"
+              className="px-3 py-2 text-stone-700 hover:bg-stone-100 rounded-full transition font-semibold text-sm flex items-center gap-1 cursor-pointer active:scale-95"
               title="Voltar período"
             >
               <ChevronLeft className="w-5 h-5 stroke-[3]" />
@@ -121,13 +121,13 @@ export const OccupancyMapView: React.FC = () => {
             </button>
             <button
               onClick={handleToday}
-              className="px-4 py-2.5 text-sm font-black text-emerald-900 bg-white hover:bg-emerald-50 rounded-xl transition shadow-xs cursor-pointer border border-stone-300 active:scale-95"
+              className="px-4 py-2 text-sm font-bold text-amber-300 bg-emerald-900 hover:bg-emerald-700 rounded-full transition cursor-pointer active:scale-95"
             >
               Hoje
             </button>
             <button
               onClick={handleNext}
-              className="px-3.5 py-2.5 text-stone-900 hover:bg-white rounded-xl transition font-extrabold text-sm flex items-center gap-1 cursor-pointer active:scale-95"
+              className="px-3 py-2 text-stone-700 hover:bg-stone-100 rounded-full transition font-semibold text-sm flex items-center gap-1 cursor-pointer active:scale-95"
               title="Avançar período"
             >
               <span className="hidden sm:inline">Próximo</span>
@@ -136,29 +136,29 @@ export const OccupancyMapView: React.FC = () => {
           </div>
 
           {/* Direct Date Input */}
-          <div className="flex items-center gap-2 bg-stone-50 border-2 border-stone-300 rounded-2xl px-3.5 py-2 text-sm text-stone-800">
+          <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm text-stone-800 ring-1 ring-stone-200">
             <Calendar className="w-4 h-4 text-emerald-800 shrink-0" />
-            <span className="font-bold text-xs sm:text-sm">A partir de:</span>
+            <span className="text-xs font-semibold text-stone-500 sm:text-sm">A partir de</span>
             <input
               type="date"
               value={startDate}
               onChange={handleDateChange}
-              className="bg-transparent border-none text-sm text-stone-950 font-black focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-sm text-emerald-900 font-bold focus:outline-none cursor-pointer"
             />
           </div>
         </div>
 
         {/* View Range Tabs: 7, 15, 30 days */}
         <div className="flex items-center justify-between md:justify-end gap-3">
-          <div className="flex items-center bg-stone-100 rounded-2xl p-1.5 border-2 border-stone-300 shadow-2xs w-full sm:w-auto justify-around">
+          <div className="flex items-center rounded-full bg-white p-1 ring-1 ring-stone-200 w-full sm:w-auto justify-around">
             {([7, 15, 30] as ViewPeriodDays[]).map((days) => (
               <button
                 key={days}
                 onClick={() => setViewDays(days)}
-                className={`px-4 py-2 text-xs sm:text-sm font-extrabold rounded-xl transition cursor-pointer ${
+                className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-full transition cursor-pointer ${
                   viewDays === days
-                    ? 'bg-white text-emerald-950 shadow-xs border-2 border-emerald-700/40'
-                    : 'text-stone-600 hover:text-stone-950'
+                    ? 'bg-emerald-900 text-amber-300'
+                    : 'text-stone-600 hover:text-emerald-900'
                 }`}
               >
                 {days} dias
@@ -169,44 +169,44 @@ export const OccupancyMapView: React.FC = () => {
       </div>
 
       {/* Explanatory Legend & Quadriculado Helper */}
-      <div className="bg-white px-4 sm:px-5 py-3.5 rounded-2xl border-2 border-stone-200 text-xs sm:text-sm text-stone-700 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center flex-wrap gap-4 sm:gap-6 font-bold">
+      <div className="px-1 text-xs text-stone-600 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center flex-wrap gap-x-5 gap-y-2 font-semibold">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-md bg-sky-600 border border-sky-700 shadow-xs" />
+            <div className="w-3 h-3 rounded-full bg-emerald-800" />
             <span>Reserva</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-md bg-amber-500 border border-amber-600 shadow-xs" />
+            <div className="w-3 h-3 rounded-full bg-amber-300 ring-1 ring-amber-500" />
             <span>Chega hoje (Check-in)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-md bg-indigo-500 border border-indigo-600 shadow-xs" />
+            <div className="w-3 h-3 rounded-full bg-indigo-500" />
             <span>Sai hoje (Check-out)</span>
           </div>
           <div className="flex items-center gap-1.5 text-stone-600 font-semibold hidden md:flex">
             <span className="w-2.5 h-2.5 rounded-full border border-dashed border-stone-400 bg-stone-100 inline-block" />
-            <span>Linha pontilhada: troca às 12h/14h (permite novo hóspede no mesmo dia)</span>
+            <span>Linha pontilhada: saída 12h · entrada 14h</span>
           </div>
         </div>
 
         <div className="text-xs text-stone-500 font-bold block sm:hidden">
-          👉 Arraste para o lado para ver o calendário
+          Arraste para o lado para ver o calendário →
         </div>
       </div>
 
       {/* Quadriculado Hospedin-Style Calendar Container */}
-      <div className="bg-white rounded-3xl border-2 border-stone-300 shadow-md overflow-hidden">
+      <div className="bg-white rounded-[24px] border border-stone-200 shadow-[0_8px_30px_rgba(12,34,16,0.06)] overflow-hidden">
         <div className="overflow-x-auto relative scrollbar-thin">
           <div className="flex flex-col min-w-max">
             {/* Header Row: Sticky Corner + Day Headers */}
-            <div className="flex border-b-2 border-stone-300 bg-stone-100 select-none">
+            <div className="flex border-b border-stone-200 bg-stone-50 select-none">
               {/* Sticky Corner Header */}
-              <div className="w-[110px] sm:w-[170px] md:w-[210px] shrink-0 p-3 sm:p-4 sticky left-0 z-30 bg-stone-100 border-r-2 border-stone-300 flex items-center justify-between shadow-[3px_0_6px_rgba(0,0,0,0.06)]">
+              <div className="w-[110px] sm:w-[170px] md:w-[210px] shrink-0 p-3 sm:p-4 sticky left-0 z-30 bg-stone-50 border-r border-stone-200 flex items-center justify-between shadow-[3px_0_6px_rgba(12,34,16,0.05)]">
                 <div>
-                  <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-stone-900 block">
+                  <span className="font-display text-sm sm:text-base font-extrabold text-emerald-900 block">
                     Chalé
                   </span>
-                  <span className="text-[11px] text-stone-500 font-bold">
+                  <span className="text-[11px] text-stone-500 font-medium">
                     {activeAccs.length} ativos
                   </span>
                 </div>
@@ -226,27 +226,27 @@ export const OccupancyMapView: React.FC = () => {
                     <div
                       key={dStr}
                       style={{ width: `${colWidth}px` }}
-                      className={`shrink-0 py-2 sm:py-3 px-1 text-center border-r-2 border-stone-300 flex flex-col justify-between transition-colors ${
-                        dayIsToday ? 'bg-amber-100 font-extrabold border-amber-400' : 'bg-stone-50'
+                      className={`shrink-0 py-2 sm:py-3 px-1 text-center border-r border-stone-200 flex flex-col justify-between transition-colors ${
+                        dayIsToday ? 'bg-emerald-900' : 'bg-stone-50'
                       }`}
                     >
                       {/* Top Date Title */}
                       <div>
                         <div className="flex items-baseline justify-center gap-1">
                           <span
-                            className={`text-xl sm:text-2xl font-black tracking-tight tabular-nums leading-none ${
-                              dayIsToday ? 'text-amber-950' : 'text-stone-900'
+                            className={`font-serif text-3xl tabular-nums leading-none ${
+                              dayIsToday ? 'text-amber-300' : 'text-emerald-900'
                             }`}
                           >
                             {dayNum}
                           </span>
-                          <span className="text-[10px] sm:text-[11px] font-extrabold text-stone-500 uppercase">
+                          <span className="text-[10px] sm:text-[11px] font-bold text-stone-400 uppercase">
                             {month}
                           </span>
                         </div>
                         <div
-                          className={`text-[11px] sm:text-xs font-black uppercase mt-0.5 ${
-                            dayIsToday ? 'text-amber-900' : 'text-stone-700'
+                          className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mt-1 ${
+                            dayIsToday ? 'text-stone-100' : 'text-stone-500'
                           }`}
                         >
                           {weekday} {dayIsToday && '• HOJE'}
@@ -254,18 +254,18 @@ export const OccupancyMapView: React.FC = () => {
                       </div>
 
                       {/* Quadriculado Half-Day Guide (12h Saída | 14h Entrada) */}
-                      <div className="mt-2 pt-1 border-t border-stone-200 grid grid-cols-2 text-[9px] sm:text-[10px] font-bold text-stone-600">
-                        <div className="border-r border-dashed border-stone-300 pr-0.5">
+                      <div className="mt-2 pt-1 border-t border-current/10 grid grid-cols-2 text-[9px] sm:text-[10px] font-medium text-stone-400">
+                        <div className="border-r border-dashed border-stone-300/70 pr-0.5">
                           12h <span className="hidden sm:inline">Sai</span>
                         </div>
-                        <div className="pl-0.5 text-emerald-800">
+                        <div className="pl-0.5">
                           14h <span className="hidden sm:inline">Entra</span>
                         </div>
                       </div>
 
                       {/* Available Count Badge */}
                       <div className="mt-1">
-                        <span className="text-[10px] sm:text-[11px] px-1.5 py-0.5 bg-white rounded-md font-black text-emerald-900 border border-stone-300 tabular-nums">
+                        <span className="text-[10px] sm:text-[11px] px-2 py-0.5 bg-emerald-100 rounded-full font-bold text-emerald-700 tabular-nums">
                           {freeCount} {freeCount === 1 ? 'livre' : 'livres'}
                         </span>
                       </div>
@@ -285,25 +285,23 @@ export const OccupancyMapView: React.FC = () => {
                 return (
                   <div
                     key={acc.id}
-                    className={`flex border-b-2 border-stone-200 relative transition-colors ${
-                      accIndex % 2 === 0 ? 'bg-white' : 'bg-stone-50/60'
-                    } hover:bg-stone-100/70 group`}
+                    className={`flex border-b border-stone-200 last:border-b-0 relative transition-colors bg-white group`}
                   >
                     {/* Sticky Accommodation Label */}
-                    <div className="w-[110px] sm:w-[170px] md:w-[210px] shrink-0 p-2.5 sm:p-4 sticky left-0 z-20 bg-white group-hover:bg-stone-50 border-r-2 border-stone-300 transition-colors shadow-[3px_0_6px_rgba(0,0,0,0.06)] flex flex-col justify-center">
-                      <div className="font-extrabold text-xs sm:text-base text-stone-900 leading-snug line-clamp-2">
+                    <div className="w-[110px] sm:w-[170px] md:w-[210px] shrink-0 p-2.5 sm:p-4 sticky left-0 z-20 bg-white border-r border-stone-200 shadow-[3px_0_6px_rgba(12,34,16,0.05)] flex flex-col justify-center">
+                      <div className="font-display font-extrabold text-xs sm:text-base text-emerald-900 leading-snug line-clamp-2">
                         {acc.nome}
                       </div>
-                      <div className="text-[10px] sm:text-xs text-stone-600 truncate mt-0.5 font-medium">
+                      <div className="text-[10px] sm:text-xs text-stone-500 truncate mt-0.5">
                         {acc.tipo}
                       </div>
                       <div className="mt-1 flex items-center gap-1.5">
                         <span
                           className={`inline-block w-2.5 h-2.5 rounded-full ${
-                            occupiedToday ? 'bg-emerald-600 ring-2 ring-emerald-200' : 'bg-stone-300'
+                            occupiedToday ? 'bg-amber-300 ring-2 ring-amber-200' : 'bg-emerald-400'
                           }`}
                         />
-                        <span className="text-[10px] sm:text-xs font-bold text-stone-700 truncate">
+                        <span className="text-[10px] sm:text-xs font-semibold text-stone-600 truncate">
                           {occupiedToday ? 'Ocupado' : 'Livre hoje'}
                         </span>
                       </div>
@@ -322,8 +320,8 @@ export const OccupancyMapView: React.FC = () => {
                           <div
                             key={dStr}
                             style={{ width: `${colWidth}px` }}
-                            className={`shrink-0 border-r-2 border-stone-300 h-full relative cursor-pointer group/cell transition-colors ${
-                              dayIsToday ? 'bg-amber-50/50' : 'hover:bg-emerald-50/50'
+                            className={`shrink-0 border-r border-stone-200 h-full relative cursor-pointer group/cell transition-colors ${
+                              dayIsToday ? 'bg-amber-50' : 'hover:bg-emerald-50/60'
                             }`}
                             onClick={() =>
                               openNewReservationModal({
@@ -335,7 +333,7 @@ export const OccupancyMapView: React.FC = () => {
                             title={`Clique para reservar ${acc.nome} a partir de ${formatDateBR(dStr)}`}
                           >
                             {/* Quadriculado Center Dotted Turnover Line (12h saída / 14h entrada) */}
-                            <div className="absolute top-0 bottom-0 left-1/2 border-r-2 border-dashed border-stone-300 pointer-events-none" />
+                            <div className="absolute top-0 bottom-0 left-1/2 border-r border-dashed border-stone-200 pointer-events-none" />
 
                             {/* Left Half: Morning check-out area (subtle hover hint) */}
                             <div
@@ -390,11 +388,11 @@ export const OccupancyMapView: React.FC = () => {
                         const checkInIsToday = res.check_in === today;
                         const checkOutIsToday = res.check_out === today;
 
-                        let blockTheme = 'bg-sky-600 hover:bg-sky-700 text-white border-sky-700';
+                        let blockTheme = 'bg-emerald-800 hover:bg-emerald-700 text-stone-50 border-emerald-900/40';
                         if (checkInIsToday) {
-                          blockTheme = 'bg-amber-600 hover:bg-amber-700 text-white border-amber-800 ring-2 ring-amber-300';
+                          blockTheme = 'bg-amber-300 hover:bg-amber-200 text-emerald-900 border-amber-500/60';
                         } else if (checkOutIsToday) {
-                          blockTheme = 'bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-800';
+                          blockTheme = 'bg-indigo-500 hover:bg-indigo-600 text-white border-indigo-700/40';
                         }
 
                         const dailyNights = calculateDailyCount(res.check_in, res.check_out);
@@ -410,26 +408,26 @@ export const OccupancyMapView: React.FC = () => {
                               left: `${leftPx}px`,
                               width: `${Math.max(widthPx, 32)}px`,
                             }}
-                            className={`absolute top-2.5 bottom-2.5 rounded-xl px-2.5 sm:px-3 flex flex-col justify-center text-xs cursor-pointer shadow-md border-2 transition-all z-10 select-none overflow-hidden active:scale-98 ${blockTheme}`}
+                            className={`absolute top-2.5 bottom-2.5 rounded-xl px-2.5 sm:px-3 flex flex-col justify-center text-xs cursor-pointer shadow-[0_4px_12px_rgba(12,34,16,0.18)] border transition-all z-10 select-none overflow-hidden active:scale-98 ${blockTheme}`}
                             title={`${res.guest_name}\nEntrada: ${formatDateBR(res.check_in)} às 14h\nSaída: ${formatDateBR(res.check_out)} às 12h\nDiárias: ${dailyNights}\nValor: ${formatCurrencyBRL(res.total_value)}`}
                           >
                             {/* Guest Name & Stay Count */}
                             <div className="flex items-center justify-between gap-1.5 min-w-0">
                               <div className="flex items-center gap-1.5 truncate">
                                 {checkInIsToday ? (
-                                  <LogIn className="w-4 h-4 text-amber-200 shrink-0" />
+                                  <LogIn className="w-4 h-4 text-emerald-800 shrink-0" />
                                 ) : checkOutIsToday ? (
-                                  <LogOut className="w-4 h-4 text-indigo-200 shrink-0" />
+                                  <LogOut className="w-4 h-4 text-indigo-100 shrink-0" />
                                 ) : (
-                                  <Bed className="w-4 h-4 text-sky-100 shrink-0" />
+                                  <Bed className="w-4 h-4 text-amber-300 shrink-0" />
                                 )}
-                                <span className="font-black truncate text-xs sm:text-sm leading-tight tracking-tight">
+                                <span className="font-display font-bold truncate text-xs sm:text-sm leading-tight">
                                   {res.guest_name}
                                 </span>
                               </div>
 
                               {widthPx > 70 && (
-                                <span className="text-[10px] sm:text-xs font-bold shrink-0 bg-black/25 px-1.5 py-0.5 rounded-md tabular-nums">
+                                <span className="text-[10px] sm:text-xs font-bold shrink-0 bg-black/20 px-1.5 py-0.5 rounded-full tabular-nums">
                                   {dailyNights}d
                                 </span>
                               )}
