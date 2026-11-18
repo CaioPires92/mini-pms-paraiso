@@ -240,7 +240,7 @@ export const OccupancyMapView: React.FC = () => {
                           >
                             {dayNum}
                           </span>
-                          <span className="text-[10px] sm:text-[11px] font-bold text-stone-400 uppercase">
+                          <span className="text-[10px] sm:text-[11px] font-bold text-stone-500 uppercase">
                             {month}
                           </span>
                         </div>
@@ -254,7 +254,7 @@ export const OccupancyMapView: React.FC = () => {
                       </div>
 
                       {/* Quadriculado Half-Day Guide (12h Saída | 14h Entrada) */}
-                      <div className="mt-2 pt-1 border-t border-current/10 grid grid-cols-2 text-[9px] sm:text-[10px] font-medium text-stone-400">
+                      <div className="mt-2 pt-1 border-t border-current/10 grid grid-cols-2 text-[9px] sm:text-[10px] font-medium text-stone-500">
                         <div className="border-r border-dashed border-stone-300/70 pr-0.5">
                           12h <span className="hidden sm:inline">Sai</span>
                         </div>

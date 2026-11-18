@@ -214,6 +214,15 @@ export const ReservationModal: React.FC = () => {
     return checkAccommodationConflict(accommodationId, checkIn, checkOut, editingId);
   }, [accommodationId, checkIn, checkOut, status, checkAccommodationConflict, editingId]);
 
+  useEffect(() => {
+    if (!modalReservation.isOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeReservationModal();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modalReservation.isOpen, closeReservationModal]);
+
   if (!modalReservation.isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -321,7 +330,7 @@ export const ReservationModal: React.FC = () => {
 
   const submitLabel = isEdit ? 'Salvar alterações' : 'Concluir reserva';
 
-  const SubmitButton = ({ className = '' }: { className?: string }) => (
+  const renderSubmit = (className = '') => (
     <button
       type="submit"
       form="reservation-form"
@@ -334,7 +343,7 @@ export const ReservationModal: React.FC = () => {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-emerald-950/60 backdrop-blur-sm sm:items-center sm:p-5">
+    <div role="dialog" aria-modal="true" aria-label={isEdit ? 'Editar reserva' : 'Nova reserva'} className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-emerald-950/60 backdrop-blur-sm sm:items-center sm:p-5">
       <div className="animate-fadeIn flex max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden rounded-t-[28px] bg-stone-50 shadow-2xl sm:max-h-[92vh] sm:rounded-[28px] md:flex-row">
         {/* Coluna do formulário */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -724,7 +733,7 @@ export const ReservationModal: React.FC = () => {
               <button type="button" onClick={closeReservationModal} className="rounded-full px-5 py-3.5 text-sm font-bold text-stone-600 hover:bg-stone-100">
                 Cancelar
               </button>
-              <SubmitButton className="flex-1 !bg-emerald-900 !text-amber-300" />
+              {renderSubmit('flex-1')}
             </div>
           </div>
         </div>
@@ -775,7 +784,7 @@ export const ReservationModal: React.FC = () => {
             )}
 
             <div className="mt-4 flex flex-col gap-2">
-              <SubmitButton />
+              {renderSubmit()}
               <button type="button" onClick={closeReservationModal} className="rounded-full px-6 py-3 text-sm font-bold text-stone-200/70 transition hover:bg-white/10 hover:text-white">
                 Cancelar
               </button>
